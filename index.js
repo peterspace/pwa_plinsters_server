@@ -144,6 +144,99 @@ app.get("/facebook_event_notification", async (req, res) => {
 
 //==============================={Main calls}================================================
 
+// app.get("/", async (req, res) => {
+//   console.log("calling host server");
+//   //======{request objects}====================================
+//   const ip = req.clientIp;
+//   const requestURL = req.originalUrl; // This will include query parameters, if any
+//   const { user_id } = req.query;
+
+//   console.log({ userIPAddress: ip });
+//   console.log({ requestURL });
+//   console.log({ Query: req.query });
+//   //============{state variables}====================================
+
+//   if (user_id === "1") {
+//     // new user
+//     console.log("new user");
+//     return res.redirect(`${backend}/register`);
+//   }
+//   const userExistsByIP = await User.findOne({ ipAddress: ip });
+//   const userExistsByID = await User.findById({ _id: user_id });
+
+//   //==================={New User}========================
+
+//   /**
+//    * register user
+//    * redirect user to app store to install app
+//    *
+//    */
+
+//   if (!user_id && !userExistsByIP) {
+//     // new user
+//     console.log("new user");
+//     return res.redirect(`${backend}/register`);
+//   } else if (!user_id && userExistsByIP) {
+//     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+
+//     let newUrl = link1;
+//     console.log({ "existing user by IP": userExistsByIP });
+
+//     // if (sub_id_1 || sub_id_2) {
+//     //   newUrl = link1 + newPath;
+//     // }
+
+//     try {
+//       const userLink = await getFirstLink(req, newUrl, userExistsByIP);
+
+//       const response = {
+//         userId: userExistsByIP._id,
+//         url: userLink,
+//       };
+
+//       console.log({ response });
+//       res.status(200).json(response);
+//     } catch (error) {
+//       const message =
+//         (error.response &&
+//           error.response.data &&
+//           error.response.data.message) ||
+//         error.message ||
+//         error.toString();
+//       console.log(message);
+//     }
+//   } else {
+//     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+
+//     let newUrl = link1;
+//     console.log({ "existing user by ID": userExistsByID });
+
+//     // if (sub_id_1 || sub_id_2) {
+//     //   newUrl = link1 + newPath;
+//     // }
+
+//     try {
+//       const userLink = await getFirstLink(req, newUrl, userExistsByID);
+
+//       const response = {
+//         userId: userExistsByID._id,
+//         url: userLink,
+//       };
+
+//       console.log({ response });
+//       res.status(200).json(response);
+//     } catch (error) {
+//       const message =
+//         (error.response &&
+//           error.response.data &&
+//           error.response.data.message) ||
+//         error.message ||
+//         error.toString();
+//       console.log(message);
+//     }
+//   }
+// });
+
 app.get("/", async (req, res) => {
   console.log("calling host server");
   //======{request objects}====================================
@@ -154,13 +247,20 @@ app.get("/", async (req, res) => {
   console.log({ userIPAddress: ip });
   console.log({ requestURL });
   console.log({ Query: req.query });
+
+  if (!user_id) {
+    console.log("organic user");
+
+    await organicUserRegistration(req, res);
+  }
+
+  if (user_id == 1 || user_id == "1") {
+    console.log("organic user");
+    await organicUserRegistration(req, res);
+  }
+
   //============{state variables}====================================
 
-  if (user_id === "1") {
-    // new user
-    console.log("new user");
-    return res.redirect(`${backend}/register`);
-  }
   const userExistsByIP = await User.findOne({ ipAddress: ip });
   const userExistsByID = await User.findById({ _id: user_id });
 
@@ -172,11 +272,43 @@ app.get("/", async (req, res) => {
    *
    */
 
-  if (!user_id && !userExistsByIP) {
-    // new user
-    console.log("new user");
-    return res.redirect(`${backend}/register`);
-  } else if (!user_id && userExistsByIP) {
+  if (!userExistsByID && !userExistsByIP) {
+    console.log("organic user");
+    await organicUserRegistration(req, res);
+  }
+
+  if (userExistsByID && userExistsByIP) {
+    //use byID
+    const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+
+    let newUrl = link1;
+    console.log({ "existing user by ID": userExistsByID });
+
+    // if (sub_id_1 || sub_id_2) {
+    //   newUrl = link1 + newPath;
+    // }
+
+    try {
+      const userLink = await getFirstLink(req, newUrl, userExistsByID);
+
+      const response = {
+        userId: userExistsByID._id,
+        url: userLink,
+      };
+
+      console.log({ response });
+      res.status(200).json(response);
+    } catch (error) {
+      const message =
+        (error.response &&
+          error.response.data &&
+          error.response.data.message) ||
+        error.message ||
+        error.toString();
+      console.log(message);
+    }
+  }
+  if (!userExistsByID && userExistsByIP) {
     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
 
     let newUrl = link1;
@@ -205,7 +337,10 @@ app.get("/", async (req, res) => {
         error.toString();
       console.log(message);
     }
-  } else {
+  }
+
+  if (userExistsByID && !userExistsByIP) {
+    //use byID
     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
 
     let newUrl = link1;
@@ -729,6 +864,95 @@ app.get("/register", async (req, res) => {
 
   //==================={New User}========================
 });
+
+async function organicUserRegistration(req, res) {
+  console.log("calling host server");
+  //======{request objects}====================================
+  const ip = req.clientIp;
+  const requestURL = req.originalUrl; // This will include query parameters, if any
+  const { sub_id_1, sub_id_2 } = req.query;
+
+  console.log({ userIPAddress: ip });
+  console.log({ requestURL });
+  console.log({ Query: req.query });
+
+  const userExistsByIP = await User.findOne({ ipAddress: ip });
+
+  const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
+  const newPath = path.replace("/register", "");
+  // console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
+
+  if (!userExistsByIP) {
+    console.log("new user");
+    const newUser = await User.create({
+      ipAddress: ip,
+      // userLink: updatedLink,
+      affiliateLink: `/?sub_id_1=organic`, // if there is no request url, then the user is an organic user
+    });
+
+    if (newUser) {
+      const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+
+      let newUrl = link1;
+      console.log({ "New user created": newUser });
+
+      if (sub_id_1 || sub_id_2) {
+        newUrl = link1 + newPath;
+      }
+
+      try {
+        const userLink = await getFirstLink(req, newUrl, newUser);
+
+        const response = {
+          userId: newUser._id,
+          url: userLink,
+        };
+
+        console.log({ response });
+        res.status(200).json(response);
+      } catch (error) {
+        const message =
+          (error.response &&
+            error.response.data &&
+            error.response.data.message) ||
+          error.message ||
+          error.toString();
+        console.log(message);
+      }
+    }
+  }
+
+  if (userExistsByIP) {
+    const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+
+    let newUrl = link1;
+    console.log({ "existing user": userExistsByIP });
+
+    if (sub_id_1 || sub_id_2) {
+      newUrl = link1 + newPath;
+    }
+
+    try {
+      const userLink = await getFirstLink(req, newUrl, userExistsByIP);
+
+      const response = {
+        userId: userExistsByIP._id,
+        url: userLink,
+      };
+
+      console.log({ response });
+      res.status(200).json(response);
+    } catch (error) {
+      const message =
+        (error.response &&
+          error.response.data &&
+          error.response.data.message) ||
+        error.message ||
+        error.toString();
+      console.log(message);
+    }
+  }
+}
 
 const server = app.listen(PORT, () => {
   console.log(`Server Running on port ${PORT}`);
