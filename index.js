@@ -247,130 +247,214 @@ app.get("/", async (req, res) => {
   console.log({ userIPAddress: ip });
   console.log({ requestURL });
   console.log({ Query: req.query });
-
-  if (!user_id) {
-    console.log("organic user");
-
-    await organicUserRegistration(req, res);
-  }
-
-  if (user_id == 1 || user_id == "1") {
-    console.log("organic user");
-    await organicUserRegistration(req, res);
-  }
-
   //============{state variables}====================================
 
-  const userExistsByIP = await User.findOne({ ipAddress: ip });
-  const userExistsByID = await User.findById({ _id: user_id });
+  let userExistsByIP = "";
+  let userExistsByID = {};
+  if (ip) {
+    userExistsByIP = await User.findOne({ ipAddress: ip });
+
+    if (!user_id && !userExistsByIP) {
+      console.log("organic user");
+      await organicUserRegistration(req, res);
+    }
+
+    if (!user_id && userExistsByIP) {
+      const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+
+      let newUrl = link1;
+      console.log({ "existing user by IP": userExistsByIP });
+
+      try {
+        const userLink = await getFirstLink(req, newUrl, userExistsByIP);
+
+        const response = {
+          userId: userExistsByIP._id,
+          url: userLink,
+        };
+
+        console.log({ response });
+        res.status(200).json(response);
+      } catch (error) {
+        const message =
+          (error.response &&
+            error.response.data &&
+            error.response.data.message) ||
+          error.message ||
+          error.toString();
+        console.log(message);
+      }
+    }
+
+    if (user_id) {
+      userExistsByID = await User.findById({ _id: user_id });
+
+      if (userExistsByID) {
+        const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+
+        let newUrl = link1;
+        console.log({ "existing user by ID": userExistsByID });
+
+        try {
+          const userLink = await getFirstLink(req, newUrl, userExistsByID);
+
+          const response = {
+            userId: userExistsByID._id,
+            url: userLink,
+          };
+
+          console.log({ response });
+          res.status(200).json(response);
+        } catch (error) {
+          const message =
+            (error.response &&
+              error.response.data &&
+              error.response.data.message) ||
+            error.message ||
+            error.toString();
+          console.log(message);
+        }
+      }
+    }
+  }
 
   //==================={New User}========================
-
-  /**
-   * register user
-   * redirect user to app store to install app
-   *
-   */
-
-  if (!userExistsByID && !userExistsByIP) {
-    console.log("organic user");
-    await organicUserRegistration(req, res);
-  }
-
-  if (userExistsByID && userExistsByIP) {
-    //use byID
-    const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
-
-    let newUrl = link1;
-    console.log({ "existing user by ID": userExistsByID });
-
-    // if (sub_id_1 || sub_id_2) {
-    //   newUrl = link1 + newPath;
-    // }
-
-    try {
-      const userLink = await getFirstLink(req, newUrl, userExistsByID);
-
-      const response = {
-        userId: userExistsByID._id,
-        url: userLink,
-      };
-
-      console.log({ response });
-      res.status(200).json(response);
-    } catch (error) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-      console.log(message);
-    }
-  }
-  if (!userExistsByID && userExistsByIP) {
-    const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
-
-    let newUrl = link1;
-    console.log({ "existing user by IP": userExistsByIP });
-
-    // if (sub_id_1 || sub_id_2) {
-    //   newUrl = link1 + newPath;
-    // }
-
-    try {
-      const userLink = await getFirstLink(req, newUrl, userExistsByIP);
-
-      const response = {
-        userId: userExistsByIP._id,
-        url: userLink,
-      };
-
-      console.log({ response });
-      res.status(200).json(response);
-    } catch (error) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-      console.log(message);
-    }
-  }
-
-  if (userExistsByID && !userExistsByIP) {
-    //use byID
-    const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
-
-    let newUrl = link1;
-    console.log({ "existing user by ID": userExistsByID });
-
-    // if (sub_id_1 || sub_id_2) {
-    //   newUrl = link1 + newPath;
-    // }
-
-    try {
-      const userLink = await getFirstLink(req, newUrl, userExistsByID);
-
-      const response = {
-        userId: userExistsByID._id,
-        url: userLink,
-      };
-
-      console.log({ response });
-      res.status(200).json(response);
-    } catch (error) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-      console.log(message);
-    }
-  }
 });
+
+// app.get("/", async (req, res) => {
+//   console.log("calling host server");
+//   //======{request objects}====================================
+//   const ip = req.clientIp;
+//   const requestURL = req.originalUrl; // This will include query parameters, if any
+//   const { user_id } = req.query;
+
+//   console.log({ userIPAddress: ip });
+//   console.log({ requestURL });
+//   console.log({ Query: req.query });
+
+//   if (!user_id) {
+//     console.log("organic user");
+
+//     await organicUserRegistration(req, res);
+//   }
+
+//   if (user_id == 1 || user_id == "1") {
+//     console.log("organic user");
+//     await organicUserRegistration(req, res);
+//   }
+
+//   //============{state variables}====================================
+
+//   const userExistsByIP = await User.findOne({ ipAddress: ip });
+//   const userExistsByID = await User.findById({ _id: user_id });
+
+//   //==================={New User}========================
+
+//   /**
+//    * register user
+//    * redirect user to app store to install app
+//    *
+//    */
+
+//   if (!userExistsByID && !userExistsByIP) {
+//     console.log("organic user");
+//     await organicUserRegistration(req, res);
+//   }
+
+//   if (userExistsByID && userExistsByIP) {
+//     //use byID
+//     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+
+//     let newUrl = link1;
+//     console.log({ "existing user by ID": userExistsByID });
+
+//     // if (sub_id_1 || sub_id_2) {
+//     //   newUrl = link1 + newPath;
+//     // }
+
+//     try {
+//       const userLink = await getFirstLink(req, newUrl, userExistsByID);
+
+//       const response = {
+//         userId: userExistsByID._id,
+//         url: userLink,
+//       };
+
+//       console.log({ response });
+//       res.status(200).json(response);
+//     } catch (error) {
+//       const message =
+//         (error.response &&
+//           error.response.data &&
+//           error.response.data.message) ||
+//         error.message ||
+//         error.toString();
+//       console.log(message);
+//     }
+//   }
+//   if (!userExistsByID && userExistsByIP) {
+//     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+
+//     let newUrl = link1;
+//     console.log({ "existing user by IP": userExistsByIP });
+
+//     // if (sub_id_1 || sub_id_2) {
+//     //   newUrl = link1 + newPath;
+//     // }
+
+//     try {
+//       const userLink = await getFirstLink(req, newUrl, userExistsByIP);
+
+//       const response = {
+//         userId: userExistsByIP._id,
+//         url: userLink,
+//       };
+
+//       console.log({ response });
+//       res.status(200).json(response);
+//     } catch (error) {
+//       const message =
+//         (error.response &&
+//           error.response.data &&
+//           error.response.data.message) ||
+//         error.message ||
+//         error.toString();
+//       console.log(message);
+//     }
+//   }
+
+//   if (userExistsByID && !userExistsByIP) {
+//     //use byID
+//     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+
+//     let newUrl = link1;
+//     console.log({ "existing user by ID": userExistsByID });
+
+//     // if (sub_id_1 || sub_id_2) {
+//     //   newUrl = link1 + newPath;
+//     // }
+
+//     try {
+//       const userLink = await getFirstLink(req, newUrl, userExistsByID);
+
+//       const response = {
+//         userId: userExistsByID._id,
+//         url: userLink,
+//       };
+
+//       console.log({ response });
+//       res.status(200).json(response);
+//     } catch (error) {
+//       const message =
+//         (error.response &&
+//           error.response.data &&
+//           error.response.data.message) ||
+//         error.message ||
+//         error.toString();
+//       console.log(message);
+//     }
+//   }
+// });
 
 //======================={conversion api events}============================================
 //conversions api calls
