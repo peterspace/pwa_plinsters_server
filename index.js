@@ -29,6 +29,7 @@ app.use(
       "http://127.0.0.1:3000",
       "http://localhost:5000",
       "http://127.0.0.1:5000",
+      "https://plinsters.netlify.app",
       "exp://192.168.1.49:8081",
       "192.168.1.49:8081",
       process.env.FRONTEND_URL,
