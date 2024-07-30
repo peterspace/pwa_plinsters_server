@@ -277,6 +277,7 @@ app.get("/", async (req, res) => {
         };
 
         console.log({ response });
+        res.header("Access-Control-Allow-Origin", "*");
         res.status(200).json(response);
       } catch (error) {
         const message =
@@ -307,6 +308,7 @@ app.get("/", async (req, res) => {
           };
 
           console.log({ response });
+          res.header("Access-Control-Allow-Origin", "*");
           res.status(200).json(response);
         } catch (error) {
           const message =
