@@ -20,6 +20,15 @@ app.use(bodyParser.json());
 app.use(express.static("public"));
 // app.use(cors());
 
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "*");
+  res.header("Access-Control-Allow-Credentials", true);
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+
+  next();
+});
+
 app.use(
   cors({
     origin: [
@@ -32,15 +41,30 @@ app.use(
       "https://plinsters.netlify.app",
       "https://plinsters.netlify.app/",
       "https://wingo-pwa.onrender.com",
-      "http://wingo-pwa.onrender.com",
+      "exp://192.168.1.49:8081",
       "192.168.1.49:8081",
       process.env.FRONTEND_URL,
       process.env.BACKEND_URL,
       "*",
     ],
+    // credentials: false,
     credentials: true,
   })
 );
+
+// Use CORS middleware
+// app.use(cors());
+
+// Alternatively, you can specify options to ensure all methods and headers are allowed
+// app.use(
+//   cors({
+//     origin: "*", // Allow all origins
+//     methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allow all standard methods
+//     allowedHeaders: "Content-Type,Authorization", // Allow standard headers
+//     exposedHeaders: "Content-Length,Content-Range", // Expose these headers
+//     credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+//   })
+// );
 
 //references
 //puppeteer and onrender config with docker: https://www.youtube.com/watch?v=6cm6G78ZDmM&t=320s
