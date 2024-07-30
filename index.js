@@ -44,18 +44,18 @@ app.use(express.static("public"));
 // );
 
 // Use CORS middleware
-// app.use(cors());
+app.use(cors());
 
 // Alternatively, you can specify options to ensure all methods and headers are allowed
-app.use(
-  cors({
-    origin: "*", // Allow all origins
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allow all standard methods
-    allowedHeaders: "Content-Type,Authorization", // Allow standard headers
-    exposedHeaders: "Content-Length,Content-Range", // Expose these headers
-    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
-  })
-);
+// app.use(
+//   cors({
+//     origin: "*", // Allow all origins
+//     methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allow all standard methods
+//     allowedHeaders: "Content-Type,Authorization", // Allow standard headers
+//     exposedHeaders: "Content-Length,Content-Range", // Expose these headers
+//     credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+//   })
+// );
 
 //references
 //puppeteer and onrender config with docker: https://www.youtube.com/watch?v=6cm6G78ZDmM&t=320s
