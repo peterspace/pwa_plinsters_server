@@ -30,6 +30,8 @@ app.use(
       "http://localhost:5000",
       "http://127.0.0.1:5000",
       "https://plinsters.netlify.app",
+      "https://plinsters.netlify.app/",
+      "https://wingo-pwa.onrender.com",
       "exp://192.168.1.49:8081",
       "192.168.1.49:8081",
       process.env.FRONTEND_URL,
