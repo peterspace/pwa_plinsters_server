@@ -20,43 +20,28 @@ app.use(bodyParser.json());
 app.use(express.static("public"));
 // app.use(cors());
 
-// app.use(
-//   cors({
-//     origin: [
-//       "http://127.0.0.1:5173",
-//       "http://localhost:5173",
-//       "http://localhost:3000",
-//       "http://127.0.0.1:3000",
-//       "http://localhost:5000",
-//       "http://127.0.0.1:5000",
-//       "https://plinsters.netlify.app",
-//       "https://plinsters.netlify.app/",
-//       "https://wingo-pwa.onrender.com",
-//       "exp://192.168.1.49:8081",
-//       "192.168.1.49:8081",
-//       process.env.FRONTEND_URL,
-//       process.env.BACKEND_URL,
-//       "*",
-//     ],
-//     credentials: false,
-//     // credentials: true,
-//   })
-// );
-
-// Use CORS middleware
-// app.use(cors());
-
-// Alternatively, you can specify options to ensure all methods and headers are allowed
 app.use(
   cors({
-    origin: "*", // Allow all origins
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allow all standard methods
-    allowedHeaders: "Content-Type,Authorization", // Allow standard headers
-    exposedHeaders: "Content-Length,Content-Range", // Expose these headers
-    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+    origin: [
+      "http://127.0.0.1:5173",
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost:5000",
+      "http://127.0.0.1:5000",
+      "https://plinsters.netlify.app",
+      "https://plinsters.netlify.app/",
+      "https://wingo-pwa.onrender.com",
+      "exp://192.168.1.49:8081",
+      "192.168.1.49:8081",
+      process.env.FRONTEND_URL,
+      process.env.BACKEND_URL,
+      "*",
+    ],
+    credentials: false,
+    // credentials: true,
   })
 );
-
 //references
 //puppeteer and onrender config with docker: https://www.youtube.com/watch?v=6cm6G78ZDmM&t=320s
 // Error Middleware
