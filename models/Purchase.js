@@ -2,20 +2,21 @@ const mongoose = require("mongoose");
 
 const purchaseSchema = new mongoose.Schema(
   {
-    ipAddress: String, //'',
-    deviceId: String, // profile.id,
-    userLink: String, // profile.id,
-    advertiserTrackingId: String,
-    affiliateLink: String,
-    email: String,
-    phone: String,
-    country: String,
-
-    role: {
-      type: String,
-      default: "User", // "User" and "Admin"
-      // default:
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
+    ipAddress: String, //'',
+    fbclid: String, // profile.id,
+    external_id: String, // profile.id,
+    campaign_name: String,
+    campaign_id: String,
+    visitor_code: String,
+    user_agent: String,
+    ip: String,
+    offer: String,
+    region: String,
+    city: String,
   },
   { timestamps: true }
 );

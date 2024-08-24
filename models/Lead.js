@@ -2,21 +2,22 @@ const mongoose = require("mongoose");
 
 const leadSchema = new mongoose.Schema(
   {
-    ipAddress: String, //'',
-    deviceId: String, // profile.id,
-    userLink: String, // profile.id,
-    advertiserTrackingId: String,
-    affiliateLink: String,
-    email: String,
-    phone: String,
-    country: String,
-    userIpAddresses: [String], // array of ips by same user. default been index 0
-
-    role: {
-      type: String,
-      default: "User", // "User" and "Admin"
-      // default:
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
+    eventType: String,
+    fbclid: String, // profile.id,
+    external_id: String, // profile.id,
+    campaign_name: String,
+    campaign_id: String,
+    visitor_code: String,
+    user_agent: String,
+    ip: String,
+    offer: String,
+    region: String,
+    city: String,
+    date: { type: Date },
   },
   { timestamps: true }
 );
