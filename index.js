@@ -49,11 +49,6 @@ const limiter = rateLimit({
   message: "To many request from this IP. Please try again later",
 });
 
-
-
-
-
-
 const app = express();
 // Middlewares
 app.use(express.json());
@@ -442,6 +437,90 @@ async function getSecondLink(req, link2) {
 
 //const registrationLink= "http://localhost:4000/register/?sub_id_1=NPR&sub_id_2=125"
 
+//ip:5.17.17.240
+
+async function cCountry() {
+  const ip = "5.17.17.240";
+  const geo = geoip.lookup(ip);
+  let isSupportedCountry = false;
+
+  console.log({ geo });
+
+  // if (geo) {
+  //   const userCountry = geo.name;
+
+  //   supportedCountries.map((country) => {
+  //     if (country === userCountry) {
+  //       console.log({ country });
+  //       console.log({ message: "Access granted: supported country" });
+  //       isSupportedCountry = true;
+  //     }
+  //   });
+  //   if (isSupportedCountry) {
+  //     const response = {
+  //       userId: "",
+  //       link: black_page,
+  //       page: "black",
+  //     };
+  //     return response;
+  //   }
+  // }
+
+  if (geo) {
+    // Check if the user's country is in the supported countries list
+    const countryName = supportedCountries.find(
+      (country) => geo.name === country
+    );
+
+    if (countryName) {
+      // User's country is supported, proceed to the next middleware
+      console.log({ message: "Access granted: supported country" });
+
+      const response = {
+        userId: "",
+        link: black_page,
+        page: "black",
+      };
+      console.log({ response });
+
+      return response;
+    } else {
+      // User's country is not supported
+      console.log({ message: "Access denied: Unsupported country" });
+
+      const response = {
+        userId: "",
+        link: white_page,
+        page: "white",
+      };
+
+      console.log({ response });
+      return response;
+    }
+  }
+}
+
+// cCountry();
+
+/***
+ * 
+ {
+  geo: {
+    country: 'RU',
+    name: 'Russia',
+    native: 'Россия',
+    phone: [ 7 ],
+    continent: 'AS',
+    continents: [ 'AS', 'EU' ],
+    capital: 'Moscow',
+    currency: [ 'RUB' ],
+    languages: [ 'ru' ],
+    continent_name: 'Asia'
+  }
+}
+ */
+
+
 async function selectCountry2(req, res) {
   // Get the user's IP address from the request
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
@@ -490,6 +569,7 @@ async function selectCountry2(req, res) {
 
       if (countryName) {
         // User's country is supported, proceed to the next middleware
+        console.log({ message: "Access granted: supported country" });
 
         const response = {
           userId: "",
@@ -556,21 +636,22 @@ async function selectCountry(req, res) {
     const geo = geoip.lookup(ip);
 
     if (geo) {
-      const userCountry = geo.country;
-
       // Check if the user's country is in the supported countries list
       const countryName = supportedCountries.find(
-        (country) => geoip.getCountryName(userCountry) === country
+        (country) => geo.name === country
       );
 
       if (countryName) {
         // User's country is supported, proceed to the next middleware
+        console.log({ message: "Access granted: supported country" });
 
         const response = {
           userId: "",
           link: black_page,
           page: "black",
         };
+        console.log({ response });
+
         return response;
       } else {
         // User's country is not supported
