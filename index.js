@@ -7,6 +7,8 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const axios = require("axios");
+var geoip = require("geoip-country");
+
 const { errorHandler } = require("./middleware/errorMiddleware.js");
 const { getCountryCode } = require("./countryCodes.js");
 const { createPurchaseEvent } = require("./controllers/purchaseControllers.js");
@@ -16,6 +18,18 @@ const leadRoutes = require("./routes/lead.js");
 const purchaseRoutes = require("./routes/purchase.js");
 const userRoutes = require("./routes/user.js");
 const { rateLimit } = require("express-rate-limit");
+
+const PORT = process.env.PORT || 5000;
+const keitaro_first_campaign = process.env.KEITARO_FIRST_CAMPAIGN; // for selecting country
+const white_page = process.env.WHITE_PAGE_LINK;
+const black_page = process.env.BLACK_PAGE_LINK;
+const campaignStatus = process.env.CAMPAIGN_STATUS;
+const defaultRequestURL = process.env.DEFAULT_REQUEST_URL;
+// List of supported countries
+// Convert the comma-separated string from the environment variable to an array
+const supportedCountries = process.env.SUPPORTED_COUNTRIES.split(",");
+console.log({ campaignStatus });
+
 //ip rate limit
 // const limiter = rateLimit({
 //   // windowMs: 15 * 60 * 1000, // 15 minutes
@@ -35,6 +49,11 @@ const limiter = rateLimit({
   message: "To many request from this IP. Please try again later",
 });
 
+
+
+
+
+
 const app = express();
 // Middlewares
 app.use(express.json());
@@ -43,32 +62,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
 app.use(cors());
+
 // app.use(limiter);
-// app.use(
-//   cors({
-//     origin: [
-//       "http://127.0.0.1:5173",
-//       "http://localhost:5173",
-//       "http://localhost:3000",
-//       "http://127.0.0.1:3000",
-//       "http://localhost:5000",
-//       "http://127.0.0.1:5000",
-//       "https://plinsters.netlify.app",
-//       "https://plinsters.netlify.app/",
-//       "https://wingo-pwa.onrender.com",
-//       "http://wingo-pwa.onrender.com",
-//       "192.168.1.49:8081",
-//       process.env.FRONTEND_URL,
-//       process.env.BACKEND_URL,
-//       "*",
-//     ],
-//     credentials: true,
-//   })
-// );
 
 //references
 //puppeteer and onrender config with docker: https://www.youtube.com/watch?v=6cm6G78ZDmM&t=320s
 // Error Middleware
+// Apply the middleware to your routes
+
 app.use(errorHandler);
 
 // Middleware to extract the IP address
@@ -87,13 +88,6 @@ app.use((req, res, next) => {
 
 // -momery unleaked---------
 app.set("trust proxy", 1);
-const PORT = process.env.PORT || 5000;
-const keitaro_first_campaign = process.env.KEITARO_FIRST_CAMPAIGN; // for selecting country
-const white_page = process.env.WHITE_PAGE_LINK;
-const black_page = process.env.BLACK_PAGE_LINK;
-const campaignStatus = process.env.CAMPAIGN_STATUS;
-const defaultRequestURL = process.env.DEFAULT_REQUEST_URL;
-console.log({ campaignStatus });
 
 //=================={Routes}===============================================
 app.use("/lead", leadRoutes);
@@ -183,6 +177,14 @@ async function redirectAppUser(req, link1) {
   return url;
 }
 
+async function getCountryByIP() {
+  var ip = "207.97.227.239";
+  var geo = geoip.lookup(ip);
+
+  console.log({ countryData: geo });
+}
+// getCountryByIP()
+
 async function fetchCountryCode() {
   // Example usage:
   // const countryName = "United States";
@@ -199,8 +201,33 @@ async function fetchCountryCode() {
   }
 }
 
-// fetchCountryCode()
+app.get("/my-ip", async (req, res) => {
+  const ip = req.clientIp;
+  console.log("calling host server");
+  //======{request objects}====================================
+  // const ip = req.clientIp;
+  // console.log({ userIPAddress: ip });
+  // res.status(200).json(ip);
 
+  if (
+    process.env.NODE_ENV === "development" &&
+    (ip === "::1" || ip === "127.0.0.1")
+  ) {
+    console.log({ message: "is local development active" });
+    // return next(); // Bypass check in development mode
+    const response = {
+      userId: "",
+      url: black_page,
+      page: "black",
+    };
+    return response;
+  } else {
+    console.log("empty");
+  }
+});
+
+// fetchCountryCode()
+//======{all request to this endpoint are from the PWA app only}==========================
 app.get("/", async (req, res) => {
   console.log("calling host server");
   //======{request objects}====================================
@@ -286,6 +313,7 @@ app.get("/", async (req, res) => {
 
   //==================={New User}========================
 });
+//======{all request to these endpoint are from the Keitaro server only}==========================
 
 app.get("/create_facebook_purchase_event", createPurchaseEvent);
 //https://www.wingsofflimits.pro/create_facebook_leads_event?fbclid={subid}&external_id={subid}&campaign_name={campaign_name}&campaign_id={campaign_id}&=true&visitor_code={visitor_code}&user_agent={user_agent}&ip={ip}&offer_id={offer_id}&os={os}&region={region}&city={city}&source={source}
@@ -414,6 +442,181 @@ async function getSecondLink(req, link2) {
 
 //const registrationLink= "http://localhost:4000/register/?sub_id_1=NPR&sub_id_2=125"
 
+async function selectCountry2(req, res) {
+  // Get the user's IP address from the request
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  if (campaignStatus === "inactive") {
+    const response = {
+      userId: "",
+      url: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  // for facebook moderation purpose
+  if (campaignStatus === "paused") {
+    const response = {
+      userId: "",
+      url: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  if (campaignStatus === "active") {
+    // Allow localhost without geoip check
+    if (
+      process.env.NODE_ENV === "development" &&
+      (ip === "::1" || ip === "127.0.0.1")
+    ) {
+      // return next(); // Bypass check in development mode
+      const response = {
+        userId: "",
+        url: black_page,
+        page: "black",
+      };
+      return response;
+    }
+
+    // Lookup the country based on the IP address
+    const geo = geoip.lookup(ip);
+
+    if (geo) {
+      const userCountry = geo.country;
+
+      // Check if the user's country is in the supported countries list
+      const countryName = supportedCountries.find(
+        (country) => geoip.getCountryName(userCountry) === country
+      );
+
+      if (countryName) {
+        // User's country is supported, proceed to the next middleware
+
+        const response = {
+          userId: "",
+          url: black_page,
+          page: "black",
+        };
+        return response;
+      } else {
+        // User's country is not supported
+        console.log({ message: "Access denied: Unsupported country" });
+
+        const response = {
+          userId: "",
+          url: white_page,
+          page: "white",
+        };
+
+        console.log({ response });
+        return response;
+      }
+    } else {
+      // If geo lookup fails, deny access
+      console.log({
+        message: "Access denied: Country could not be determined",
+      });
+      const response = {
+        userId: "",
+        url: white_page,
+        page: "white",
+      };
+
+      console.log({ response });
+      return response;
+    }
+  }
+}
+// Middleware to check if the user's country is supported
+async function selectCountry(req, res) {
+  // Get the user's IP address from the request
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  if (campaignStatus === "inactive") {
+    console.log({ message: "campaignStatus in active" });
+    const response = {
+      userId: "",
+      link: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  // for facebook moderation purpose
+  if (campaignStatus === "paused") {
+    console.log({ message: "campaignStatus paused" });
+    const response = {
+      userId: "",
+      link: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  if (campaignStatus === "active") {
+    console.log({ message: "campaignStatus active" });
+
+    // Lookup the country based on the IP address
+    const geo = geoip.lookup(ip);
+
+    if (geo) {
+      const userCountry = geo.country;
+
+      // Check if the user's country is in the supported countries list
+      const countryName = supportedCountries.find(
+        (country) => geoip.getCountryName(userCountry) === country
+      );
+
+      if (countryName) {
+        // User's country is supported, proceed to the next middleware
+
+        const response = {
+          userId: "",
+          link: black_page,
+          page: "black",
+        };
+        return response;
+      } else {
+        // User's country is not supported
+        console.log({ message: "Access denied: Unsupported country" });
+
+        const response = {
+          userId: "",
+          link: white_page,
+          page: "white",
+        };
+
+        console.log({ response });
+        return response;
+      }
+    } else {
+      // Allow localhost without geoip check
+      if (
+        process.env.NODE_ENV === "development" &&
+        (ip === "::1" || ip === "127.0.0.1")
+      ) {
+        console.log({ message: "is local development active" });
+        // return next(); // Bypass check in development mode
+        const response = {
+          userId: "",
+          link: black_page,
+          page: "black",
+        };
+        return response;
+      } else {
+        // If geo lookup fails, deny access
+        console.log({
+          message: "Access denied: Country could not be determined",
+        });
+        const response = {
+          userId: "",
+          link: white_page,
+          page: "white",
+        };
+
+        console.log({ response });
+        return response;
+      }
+    }
+  }
+}
+
 app.get("/register", async (req, res) => {
   console.log("calling host server");
   //======{request objects}====================================
@@ -426,41 +629,86 @@ app.get("/register", async (req, res) => {
   console.log({ requestURL });
   console.log({ Query: req.query });
 
-  const userExistsByIP = await User.findOne({ ipAddress: ip });
+  const userLink = await selectCountry(req, res);
 
-  const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
-  const newPath = path.replace("/register", "");
-  console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
+  console.log({ userLinkSent: userLink });
 
-  if (!userExistsByIP) {
-    console.log("new user");
-    const newUser = await User.create({
-      ipAddress: ip,
-      // userLink: updatedLink,
-      affiliateLink: newPath ? newPath : defaultRequestURL, // if there is no request url, then the user is an organic user
-    });
+  // no need to register users from unsupported countries
+  if (userLink?.page == "white") {
+    const response = {
+      userId: "",
+      url: userLink.link,
+      page: userLink.page,
+    };
 
-    if (newUser) {
-      const link1 = keitaro_first_campaign; // first campaign
+    console.log({ response });
+    res.status(200).json(response);
+  } else {
+    const userExistsByIP = await User.findOne({ ipAddress: ip });
+
+    const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
+    const newPath = path.replace("/register", "");
+    console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
+
+    if (!userExistsByIP) {
+      console.log("new user");
+      const newUser = await User.create({
+        ipAddress: ip,
+        // userLink: updatedLink,
+        affiliateLink: newPath ? newPath : defaultRequestURL, // if there is no request url, then the user is an organic user
+      });
+
+      if (newUser) {
+        const link1 = keitaro_first_campaign; // first campaign
+
+        let newUrl = link1;
+        console.log({ "New user created": newUser });
+
+        if (sub_id_1 || sub_id_2) {
+          newUrl = link1 + newPath;
+        }
+
+        try {
+          const response = {
+            userId: newUser._id,
+            url: userLink.link,
+            page: userLink.page,
+          };
+
+          console.log({ response });
+          res.status(200).json(response);
+        } catch (error) {
+          const message =
+            (error.response &&
+              error.response.data &&
+              error.response.data.message) ||
+            error.message ||
+            error.toString();
+          console.log(message);
+        }
+      }
+    }
+
+    if (userExistsByIP) {
+      //link1:  first campaign to check for supported countries
+      const link1 = keitaro_first_campaign;
 
       let newUrl = link1;
-      console.log({ "New user created": newUser });
+      console.log({ "existing user": userExistsByIP });
 
       if (sub_id_1 || sub_id_2) {
         newUrl = link1 + newPath;
       }
 
       try {
-        const userLink = await redirectAppUser(req, newUrl);
         const response = {
-          userId: newUser._id,
+          userId: userExistsByIP._id,
           url: userLink.link,
           page: userLink.page,
         };
 
         console.log({ response });
         res.status(200).json(response);
-        // res.redirect(userLink);
       } catch (error) {
         const message =
           (error.response &&
@@ -468,47 +716,8 @@ app.get("/register", async (req, res) => {
             error.response.data.message) ||
           error.message ||
           error.toString();
-        console.log(message);
-        // response = {
-        //   userId: "",
-        //   url: white_page,
-        // };
+        console.log({ "registration error": message });
       }
-    }
-  }
-
-  if (userExistsByIP) {
-    //link1:  first campaign to check for supported countries
-    const link1 = keitaro_first_campaign;
-
-    let newUrl = link1;
-    console.log({ "existing user": userExistsByIP });
-
-    if (sub_id_1 || sub_id_2) {
-      newUrl = link1 + newPath;
-    }
-
-    try {
-      const userLink = await redirectAppUser(req, newUrl);
-      //link to app for existing users
-
-      const response = {
-        userId: userExistsByIP._id,
-        url: userLink.link,
-        page: userLink.page,
-      };
-
-      console.log({ response });
-      res.status(200).json(response);
-      // res.redirect(userLink);
-    } catch (error) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-      console.log({ "registration error": message });
     }
   }
 
@@ -526,42 +735,83 @@ async function organicUserRegistration(req, res) {
   console.log({ requestURL });
   console.log({ Query: req.query });
 
-  const userExistsByIP = await User.findOne({ ipAddress: ip });
+  const userLink = await selectCountry(req, res);
 
-  const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
-  const newPath = path.replace("/register", "");
-  // console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
+  // no need to register users from unsupported countries
+  if (userLink?.page == "white") {
+    const response = {
+      userId: "",
+      url: userLink.link,
+      page: userLink.page,
+    };
 
-  if (!userExistsByIP) {
-    console.log("new user");
-    const newUser = await User.create({
-      ipAddress: ip,
-      // affiliateLink: `/?sub_id_1=organic`, // if there is no request url, then the user is an organic user
-      affiliateLink: defaultRequestURL, // if there is no request url, then the user is an organic user
-    });
+    console.log({ response });
+    res.status(200).json(response);
+  } else {
+    const userExistsByIP = await User.findOne({ ipAddress: ip });
 
-    if (newUser) {
+    const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
+    const newPath = path.replace("/register", "");
+    // console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
+
+    if (!userExistsByIP) {
+      console.log("new user");
+      const newUser = await User.create({
+        ipAddress: ip,
+        // affiliateLink: `/?sub_id_1=organic`, // if there is no request url, then the user is an organic user
+        affiliateLink: defaultRequestURL, // if there is no request url, then the user is an organic user
+      });
+
+      if (newUser) {
+        const link1 = keitaro_first_campaign; // first campaign
+
+        let newUrl = link1;
+        console.log({ "New user created": newUser });
+
+        if (sub_id_1 || sub_id_2) {
+          newUrl = link1 + newPath;
+        }
+
+        try {
+          const response = {
+            userId: newUser._id,
+            url: userLink.link,
+            page: userLink.page,
+          };
+
+          console.log({ response });
+          res.status(200).json(response);
+        } catch (error) {
+          const message =
+            (error.response &&
+              error.response.data &&
+              error.response.data.message) ||
+            error.message ||
+            error.toString();
+          console.log(message);
+        }
+      }
+    }
+
+    if (userExistsByIP) {
       const link1 = keitaro_first_campaign; // first campaign
 
       let newUrl = link1;
-      console.log({ "New user created": newUser });
+      console.log({ "existing user": userExistsByIP });
 
       if (sub_id_1 || sub_id_2) {
         newUrl = link1 + newPath;
       }
 
       try {
-        const userLink = await redirectAppUser(req, newUrl);
-
         const response = {
-          userId: newUser._id,
+          userId: userExistsByIP._id,
           url: userLink.link,
           page: userLink.page,
         };
 
         console.log({ response });
         res.status(200).json(response);
-        // res.redirect(userLink);
       } catch (error) {
         const message =
           (error.response &&
@@ -571,39 +821,6 @@ async function organicUserRegistration(req, res) {
           error.toString();
         console.log(message);
       }
-    }
-  }
-
-  if (userExistsByIP) {
-    const link1 = keitaro_first_campaign; // first campaign
-
-    let newUrl = link1;
-    console.log({ "existing user": userExistsByIP });
-
-    if (sub_id_1 || sub_id_2) {
-      newUrl = link1 + newPath;
-    }
-
-    try {
-      const userLink = await redirectAppUser(req, newUrl);
-
-      const response = {
-        userId: userExistsByIP._id,
-        url: userLink.link,
-        page: userLink.page,
-      };
-
-      console.log({ response });
-      res.status(200).json(response);
-      // res.redirect(userLink);
-    } catch (error) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-      console.log(message);
     }
   }
 }

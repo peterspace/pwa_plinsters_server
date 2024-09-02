@@ -7,10 +7,106 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const axios = require("axios");
+var geoip = require("geoip-country");
+
 const { errorHandler } = require("./middleware/errorMiddleware.js");
 const { getCountryCode } = require("./countryCodes.js");
-
+const { createPurchaseEvent } = require("./controllers/purchaseControllers.js");
+const { createLeadEvent } = require("./controllers/leadControllers.js");
 const User = require("./models/User.js");
+const leadRoutes = require("./routes/lead.js");
+const purchaseRoutes = require("./routes/purchase.js");
+const userRoutes = require("./routes/user.js");
+const { rateLimit } = require("express-rate-limit");
+
+const PORT = process.env.PORT || 5000;
+const keitaro_first_campaign = process.env.KEITARO_FIRST_CAMPAIGN; // for selecting country
+const white_page = process.env.WHITE_PAGE_LINK;
+const black_page = process.env.BLACK_PAGE_LINK;
+const campaignStatus = process.env.CAMPAIGN_STATUS;
+const defaultRequestURL = process.env.DEFAULT_REQUEST_URL;
+console.log({ campaignStatus });
+
+//ip rate limit
+// const limiter = rateLimit({
+//   // windowMs: 15 * 60 * 1000, // 15 minutes
+//   windowMs: 1 * 60 * 1000, // 15 minutes testing
+//   max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+//   message:"To many request from this IP. Please try again later"
+// });
+
+const limiter = rateLimit({
+  // windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 1 * 60 * 1000, // 15 minutes testing
+  max: 3, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: "To many request from this IP. Please try again later",
+});
+
+// List of supported countries
+
+// Convert the comma-separated string from the environment variable to an array
+const supportedCountries = process.env.SUPPORTED_COUNTRIES.split(",");
+
+console.log({ supportedCountries });
+
+// Middleware to check if the user's country is supported
+function checkCountry(req, res, next) {
+  // Get the user's IP address from the request
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+  // Allow localhost without geoip check
+  if (
+    process.env.NODE_ENV === "development" &&
+    (ip === "::1" || ip === "127.0.0.1")
+  ) {
+    return next(); // Bypass check in development mode
+  }
+
+  // Lookup the country based on the IP address
+  const geo = geoip.lookup(ip);
+
+  if (geo) {
+    const userCountry = geo.country;
+
+    // Check if the user's country is in the supported countries list
+    const countryName = supportedCountries.find(
+      (country) => geoip.getCountryName(userCountry) === country
+    );
+
+    if (countryName) {
+      // User's country is supported, proceed to the next middleware
+      return next();
+    } else {
+      // User's country is not supported
+      console.log({ message: "Access denied: Unsupported country" });
+
+      const response = {
+        userId: "",
+        url: white_page,
+        page: "white",
+      };
+
+      console.log({ response });
+      return res.status(200).json(response);
+    }
+  } else {
+    // If geo lookup fails, deny access
+    console.log({ message: "Access denied: Country could not be determined" });
+    const response = {
+      userId: "",
+      url: white_page,
+      page: "white",
+    };
+
+    console.log({ response });
+    return res.status(200).json(response);
+  }
+}
+
 const app = express();
 // Middlewares
 app.use(express.json());
@@ -18,57 +114,15 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use(bodyParser.json());
 app.use(express.static("public"));
-// app.use(cors());
+app.use(cors());
 
-app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "*");
-  res.header("Access-Control-Allow-Credentials", true);
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-
-  next();
-});
-
-app.use(
-  cors({
-    origin: [
-      "http://127.0.0.1:5173",
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:5000",
-      "http://127.0.0.1:5000",
-      "https://plinsters.netlify.app",
-      "https://plinsters.netlify.app/",
-      "https://wingo-pwa.onrender.com",
-      "exp://192.168.1.49:8081",
-      "192.168.1.49:8081",
-      process.env.FRONTEND_URL,
-      process.env.BACKEND_URL,
-      "*",
-    ],
-    // credentials: false,
-    credentials: true,
-  })
-);
-
-// Use CORS middleware
-// app.use(cors());
-
-// Alternatively, you can specify options to ensure all methods and headers are allowed
-// app.use(
-//   cors({
-//     origin: "*", // Allow all origins
-//     methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allow all standard methods
-//     allowedHeaders: "Content-Type,Authorization", // Allow standard headers
-//     exposedHeaders: "Content-Length,Content-Range", // Expose these headers
-//     credentials: true, // Allow credentials (cookies, authorization headers, etc.)
-//   })
-// );
+// app.use(limiter);
 
 //references
 //puppeteer and onrender config with docker: https://www.youtube.com/watch?v=6cm6G78ZDmM&t=320s
 // Error Middleware
+// Apply the middleware to your routes
+
 app.use(errorHandler);
 
 // Middleware to extract the IP address
@@ -84,13 +138,19 @@ app.use((req, res, next) => {
 
   next();
 });
+// app.use(checkCountry); // using country selection
 
 // -momery unleaked---------
 app.set("trust proxy", 1);
-const PORT = process.env.PORT || 5000;
-const backend = process.env.BACKEND_URL;
-const pixelId = process.env.FACEBOOK_PIXEL_ID;
-const pixel_access_token = process.env.FACEBOOK_PIXEL_ACCESS_TOKEN;
+
+//=================={Routes}===============================================
+app.use("/lead", leadRoutes);
+app.use("/purchase", purchaseRoutes);
+app.use("/user", userRoutes);
+
+//active
+//suspended
+//inactive
 
 //Step1: initial path
 
@@ -104,18 +164,80 @@ function hashData(data) {
 
 //testing purchase call from server
 
-async function sendPurchaseOnServer() {
-  const url = `${backend}/create_facebook_purchase_event?fbclid=123&external_id=user125`;
+async function redirectAppUser(req, link1) {
+  let url;
 
-  try {
-    const response = await axios.get(url);
-    // if (response.data) {
-    //   console.log({ response: response.data });
-    // }
-  } catch (error) {
-    console.log({ error });
+  if (campaignStatus === "inactive") {
+    url = {
+      link: white_page,
+      page: "white",
+    };
   }
+  // for facebook moderation purpose
+  if (campaignStatus === "paused") {
+    url = {
+      link: white_page,
+      page: "white",
+    };
+  }
+
+  // return url;
+  let link = "";
+
+  if (campaignStatus === "active") {
+    try {
+      // Create an HTTPS agent that ignores SSL certificate errors
+      const agent = new https.Agent({
+        rejectUnauthorized: false,
+      });
+
+      const response = await axios.get(link1, {
+        headers: req.headers, // Forward original headers if needed
+        httpsAgent: agent, // Use the agent that ignores SSL errors
+      });
+
+      if (response.data) {
+        link = response.data;
+
+        if (link.startsWith("http://") || link.startsWith("https://")) {
+          console.log("The string starts with 'http' or 'https'.");
+          // supported country
+          url = {
+            link: black_page,
+            page: "black",
+          };
+        }
+      }
+      // return link2;
+    } catch (error) {
+      const message =
+        (error.response &&
+          error.response.data &&
+          error.response.data.message) ||
+        error.message ||
+        error.toString();
+      console.log(message);
+      console.log({
+        stage6: "return error 404 for unsupported region",
+      });
+      //unsupported country
+      url = {
+        link: white_page,
+        page: "white",
+      };
+    }
+  }
+
+  return url;
 }
+
+async function getCountryByIP() {
+  var ip = "207.97.227.239";
+  var geo = geoip.lookup(ip);
+
+  console.log({ countryData: geo });
+}
+// getCountryByIP()
 
 async function fetchCountryCode() {
   // Example usage:
@@ -133,138 +255,33 @@ async function fetchCountryCode() {
   }
 }
 
-// fetchCountryCode()
-// sendPurchaseOnServer();
+app.get("/my-ip", async (req, res) => {
+  const ip = req.clientIp;
+  console.log("calling host server");
+  //======{request objects}====================================
+  // const ip = req.clientIp;
+  // console.log({ userIPAddress: ip });
+  // res.status(200).json(ip);
 
-//http://localhost:4000/create_facebook_purchase_event?fbclid=123&value=25
-
-//http://localhost:4000/create_facebook_purchase_event?fbclid=123&external_id=user125
-//http://localhost:4000/create_facebook_lead_event?fbclid=123&external_id=user125
-
-// Endpoint to create Facebook purchase event
-
-//testing lead directly
-async function sendLeadOnServer() {
-  const url = `${backend}/create_facebook_lead_event?fbclid=123&external_id=user125`;
-
-  try {
-    const response = await axios.get(url);
-    // if (response.data) {
-    //   console.log({ response: response.data });
-    // }
-  } catch (error) {
-    console.log({ error });
-  }
-}
-
-// sendLeadOnServer();
-
-// Endpoint to create Facebook lead event
-
-// Endpoint to create Facebook lead event
-app.get("/facebook_event_notification", async (req, res) => {
-  const { event } = req.query;
-
-  if (event) {
-    console.log({ fB_event: event });
+  if (
+    process.env.NODE_ENV === "development" &&
+    (ip === "::1" || ip === "127.0.0.1")
+  ) {
+    console.log({ message: "is local development active" });
+    // return next(); // Bypass check in development mode
+    const response = {
+      userId: "",
+      url: black_page,
+      page: "black",
+    };
+    return response;
+  } else {
+    console.log("empty");
   }
 });
 
-//==============================={Main calls}================================================
-
-// app.get("/", async (req, res) => {
-//   console.log("calling host server");
-//   //======{request objects}====================================
-//   const ip = req.clientIp;
-//   const requestURL = req.originalUrl; // This will include query parameters, if any
-//   const { user_id } = req.query;
-
-//   console.log({ userIPAddress: ip });
-//   console.log({ requestURL });
-//   console.log({ Query: req.query });
-//   //============{state variables}====================================
-
-//   if (user_id === "1") {
-//     // new user
-//     console.log("new user");
-//     return res.redirect(`${backend}/register`);
-//   }
-//   const userExistsByIP = await User.findOne({ ipAddress: ip });
-//   const userExistsByID = await User.findById({ _id: user_id });
-
-//   //==================={New User}========================
-
-//   /**
-//    * register user
-//    * redirect user to app store to install app
-//    *
-//    */
-
-//   if (!user_id && !userExistsByIP) {
-//     // new user
-//     console.log("new user");
-//     return res.redirect(`${backend}/register`);
-//   } else if (!user_id && userExistsByIP) {
-//     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
-
-//     let newUrl = link1;
-//     console.log({ "existing user by IP": userExistsByIP });
-
-//     // if (sub_id_1 || sub_id_2) {
-//     //   newUrl = link1 + newPath;
-//     // }
-
-//     try {
-//       const userLink = await getFirstLink(req, newUrl, userExistsByIP);
-
-//       const response = {
-//         userId: userExistsByIP._id,
-//         url: userLink,
-//       };
-
-//       console.log({ response });
-//       res.status(200).json(response);
-//     } catch (error) {
-//       const message =
-//         (error.response &&
-//           error.response.data &&
-//           error.response.data.message) ||
-//         error.message ||
-//         error.toString();
-//       console.log(message);
-//     }
-//   } else {
-//     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
-
-//     let newUrl = link1;
-//     console.log({ "existing user by ID": userExistsByID });
-
-//     // if (sub_id_1 || sub_id_2) {
-//     //   newUrl = link1 + newPath;
-//     // }
-
-//     try {
-//       const userLink = await getFirstLink(req, newUrl, userExistsByID);
-
-//       const response = {
-//         userId: userExistsByID._id,
-//         url: userLink,
-//       };
-
-//       console.log({ response });
-//       res.status(200).json(response);
-//     } catch (error) {
-//       const message =
-//         (error.response &&
-//           error.response.data &&
-//           error.response.data.message) ||
-//         error.message ||
-//         error.toString();
-//       console.log(message);
-//     }
-//   }
-// });
-
+// fetchCountryCode()
+//======{all request to this endpoint are from the PWA app only}==========================
 app.get("/", async (req, res) => {
   console.log("calling host server");
   //======{request objects}====================================
@@ -288,7 +305,7 @@ app.get("/", async (req, res) => {
     }
 
     if (!user_id && userExistsByIP) {
-      const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+      const link1 = keitaro_first_campaign; // first campaign
 
       let newUrl = link1;
       console.log({ "existing user by IP": userExistsByIP });
@@ -319,7 +336,7 @@ app.get("/", async (req, res) => {
       userExistsByID = await User.findById({ _id: user_id });
 
       if (userExistsByID) {
-        const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+        const link1 = keitaro_first_campaign; // first campaign
 
         let newUrl = link1;
         console.log({ "existing user by ID": userExistsByID });
@@ -350,423 +367,11 @@ app.get("/", async (req, res) => {
 
   //==================={New User}========================
 });
+//======{all request to these endpoint are from the Keitaro server only}==========================
 
-// app.get("/", async (req, res) => {
-//   console.log("calling host server");
-//   //======{request objects}====================================
-//   const ip = req.clientIp;
-//   const requestURL = req.originalUrl; // This will include query parameters, if any
-//   const { user_id } = req.query;
-
-//   console.log({ userIPAddress: ip });
-//   console.log({ requestURL });
-//   console.log({ Query: req.query });
-
-//   if (!user_id) {
-//     console.log("organic user");
-
-//     await organicUserRegistration(req, res);
-//   }
-
-//   if (user_id == 1 || user_id == "1") {
-//     console.log("organic user");
-//     await organicUserRegistration(req, res);
-//   }
-
-//   //============{state variables}====================================
-
-//   const userExistsByIP = await User.findOne({ ipAddress: ip });
-//   const userExistsByID = await User.findById({ _id: user_id });
-
-//   //==================={New User}========================
-
-//   /**
-//    * register user
-//    * redirect user to app store to install app
-//    *
-//    */
-
-//   if (!userExistsByID && !userExistsByIP) {
-//     console.log("organic user");
-//     await organicUserRegistration(req, res);
-//   }
-
-//   if (userExistsByID && userExistsByIP) {
-//     //use byID
-//     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
-
-//     let newUrl = link1;
-//     console.log({ "existing user by ID": userExistsByID });
-
-//     // if (sub_id_1 || sub_id_2) {
-//     //   newUrl = link1 + newPath;
-//     // }
-
-//     try {
-//       const userLink = await getFirstLink(req, newUrl, userExistsByID);
-
-//       const response = {
-//         userId: userExistsByID._id,
-//         url: userLink,
-//       };
-
-//       console.log({ response });
-//       res.status(200).json(response);
-//     } catch (error) {
-//       const message =
-//         (error.response &&
-//           error.response.data &&
-//           error.response.data.message) ||
-//         error.message ||
-//         error.toString();
-//       console.log(message);
-//     }
-//   }
-//   if (!userExistsByID && userExistsByIP) {
-//     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
-
-//     let newUrl = link1;
-//     console.log({ "existing user by IP": userExistsByIP });
-
-//     // if (sub_id_1 || sub_id_2) {
-//     //   newUrl = link1 + newPath;
-//     // }
-
-//     try {
-//       const userLink = await getFirstLink(req, newUrl, userExistsByIP);
-
-//       const response = {
-//         userId: userExistsByIP._id,
-//         url: userLink,
-//       };
-
-//       console.log({ response });
-//       res.status(200).json(response);
-//     } catch (error) {
-//       const message =
-//         (error.response &&
-//           error.response.data &&
-//           error.response.data.message) ||
-//         error.message ||
-//         error.toString();
-//       console.log(message);
-//     }
-//   }
-
-//   if (userExistsByID && !userExistsByIP) {
-//     //use byID
-//     const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
-
-//     let newUrl = link1;
-//     console.log({ "existing user by ID": userExistsByID });
-
-//     // if (sub_id_1 || sub_id_2) {
-//     //   newUrl = link1 + newPath;
-//     // }
-
-//     try {
-//       const userLink = await getFirstLink(req, newUrl, userExistsByID);
-
-//       const response = {
-//         userId: userExistsByID._id,
-//         url: userLink,
-//       };
-
-//       console.log({ response });
-//       res.status(200).json(response);
-//     } catch (error) {
-//       const message =
-//         (error.response &&
-//           error.response.data &&
-//           error.response.data.message) ||
-//         error.message ||
-//         error.toString();
-//       console.log(message);
-//     }
-//   }
-// });
-
-//======================={conversion api events}============================================
-//conversions api calls
-//rename as:conversion_purchase_event
-app.get("/create_facebook_purchase_event", async (req, res) => {
-  const {
-    // fbclid,
-    sub_id_10,
-    external_id,
-    date,
-    client_ip_address,
-    phone,
-    email,
-    country,
-    event_id,
-  } = req.query;
-
-  const ip = req.clientIp;
-
-  console.log({ userIPAddress: ip });
-  console.log({ requestURL: req.originalUrl });
-  console.log({ Query: req.query });
-
-  const unixTimeNow = Math.floor(Date.now() / 1000);
-  console.log({ unixTimeNow });
-
-  const min = 1;
-  const max = 9999;
-  let randomNumberFloat = Math.random() * (max - min) + min;
-
-  const random = Math.round(randomNumberFloat);
-  console.log({ random });
-
-  if (unixTimeNow && random) {
-    console.log({ processing: "calling facebook endpoint" });
-
-    const pixelId = process.env.FACEBOOK_PIXEL_ID; // Replace with your Pixel ID
-    const accessToken = process.env.FACEBOOK_PIXEL_ACCESS_TOKEN; // Replace with your Access Token
-
-    const url = `https://graph.facebook.com/v11.0/${pixelId}/events?access_token=${accessToken}`;
-
-    const payload = {
-      data: [
-        {
-          event_name: "Purchase",
-          event_time: date
-            ? Math.floor(new Date(date).getTime() / 1000)
-            : unixTimeNow,
-          action_source: "website",
-          event_source_url: "https://av-gameprivacypolicy.site/app",
-          event_id: event_id || `event_${unixTimeNow}_${random}`, // add this to pixel data on landing page
-          user_data: {
-            external_id: external_id ? external_id.toString() : "user123",
-            client_ip_address: client_ip_address || ip,
-            client_user_agent:
-              req.headers["user-agent"] ||
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            fbc: `fb.1.${date || unixTimeNow}.${
-              sub_id_10 ? sub_id_10 : "abcdefg"
-            }`,
-            fbp: `fb.1.${date || unixTimeNow}.${random}`,
-            em: email ? [hashData(email.toString())] : null, // Hash and place email in array
-            ph: phone ? [hashData(phone.toString())] : null, // Hash and place phone in array
-            country: country ? [hashData(country.toString())] : null, // Hash and place country in array//[hashData("us")]
-          },
-          custom_data: {
-            currency: "USD",
-            value: 10.0,
-          },
-        },
-      ],
-    };
-
-    const headers = {
-      "Content-Type": "application/json",
-    };
-
-    try {
-      const response = await axios.post(url, payload, { headers: headers });
-
-      if (response.data) {
-        let result = response.data;
-        console.log({ FB_purchase_event_result: result });
-      }
-    } catch (error) {
-      console.log({ FB_purchase_event_error: error });
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-        console.error("Error response headers:", error.response.headers);
-      } else if (error.request) {
-        console.error("Error request data:", error.request);
-      } else {
-        console.error("Error message:", error.message);
-      }
-    }
-  }
-});
-
-const FB_purchase_event_result = {
-  events_received: 1,
-  messages: [],
-  fbtrace_id: "ArWB9ILWNOQSdiy9JUUaeK2",
-};
-// Endpoint to create Facebook lead event
-//rename as :pixel_lead_event
-app.get("/create_facebook_lead_event", async (req, res) => {
-  const {
-    // fbclid,
-    sub_id_10,
-    external_id,
-    date,
-    client_ip_address,
-    phone,
-    email,
-    country,
-    event_id,
-  } = req.query;
-
-  const ip = req.clientIp;
-
-  console.log({ userIPAddress: ip });
-  console.log({ requestURL: req.originalUrl });
-  console.log({ Query: req.query });
-
-  const unixTimeNow = Math.floor(Date.now() / 1000);
-  console.log({ unixTimeNow });
-
-  const min = 1;
-  const max = 9999;
-  let randomNumberFloat = Math.random() * (max - min) + min;
-
-  const random = Math.round(randomNumberFloat);
-  console.log({ random });
-
-  if (unixTimeNow && random) {
-    console.log({ processing: "calling facebook endpoint" });
-
-    const url = `https://graph.facebook.com/v11.0/${pixelId}/events?access_token=${pixel_access_token}`;
-
-    const payload = {
-      data: [
-        {
-          event_name: "Lead",
-          event_time: date
-            ? Math.floor(new Date(date).getTime() / 1000)
-            : unixTimeNow,
-          action_source: "website",
-          event_source_url: "https://av-gameprivacypolicy.site/app",
-          event_id: event_id || `event_${unixTimeNow}_${random}`, // add this to pixel data on landing page
-          user_data: {
-            external_id: external_id
-              ? [hashData(external_id.toString())]
-              : [hashData("12345")],
-
-            client_ip_address: client_ip_address || ip,
-            client_user_agent:
-              req.headers["user-agent"] ||
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            fbc: `fb.1.${date || unixTimeNow}.${
-              sub_id_10 ? sub_id_10 : "abcdefg"
-            }`,
-            fbp: `fb.1.${date || unixTimeNow}.${random}`,
-            em: email ? [hashData(email.toString())] : null, // Hash and place email in array
-            ph: phone ? [hashData(phone.toString())] : null, // Hash and place phone in array
-            country: country ? [hashData(country.toString())] : null, // Hash and place country in array//[hashData("us")]
-          },
-        },
-      ],
-    };
-
-    const headers = {
-      "Content-Type": "application/json",
-    };
-
-    try {
-      const response = await axios.post(url, payload, { headers: headers });
-
-      if (response.data) {
-        let result = response.data;
-        console.log({ FB_lead_event_result: result });
-      }
-    } catch (error) {
-      console.log({ FB_lead_event_error: error });
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-        console.error("Error response headers:", error.response.headers);
-      } else if (error.request) {
-        console.error("Error request data:", error.request);
-      } else {
-        console.error("Error message:", error.message);
-      }
-    }
-  }
-});
-
-const FB_lead_event_result = {
-  events_received: 1,
-  messages: [],
-  fbtrace_id: "A9bTo8fGaSixvUR5hOQ7lF9",
-};
-
-const FB_app_install_event_result = {
-  events_received: 1,
-  messages: [],
-  fbtrace_id: "AWcieJkmzGCLAgp-Mjia0yC",
-};
-
-//fb example
-const payload = {
-  data: [
-    {
-      event_name: "Purchase",
-      event_time: 1720980438,
-      action_source: "website",
-      user_data: {
-        em: [
-          "7b17fb0bd173f625b58636fb796407c22b3d16fc78302d79f0fd30c2fc2fc068",
-        ],
-        ph: [null],
-      },
-      custom_data: {
-        currency: "USD",
-        value: "142.52",
-      },
-    },
-  ],
-};
-
-const purchasePayload1 = {
-  data: [
-    {
-      action_source: "website",
-      event_name: "Purchase",
-      event_time: 1720981164,
-      custom_data: { currency: "USD", value: 142.52 },
-      user_data: {
-        em: [
-          "7b17fb0bd173f625b58636fb796407c22b3d16fc78302d79f0fd30c2fc2fc068",
-        ],
-        ph: [],
-        fbc: "fb.1.1558723201720.abcde",
-        fbp: "fb.1.1558571054390.1098115397",
-        external_id: [
-          "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
-        ],
-        country: [],
-      },
-    },
-  ],
-};
-
-const purchasePayload = {
-  data: [
-    {
-      event_name: "Purchase",
-      event_time: 1720981164,
-      action_source: "website",
-      user_data: {
-        em: [
-          "7b17fb0bd173f625b58636fb796407c22b3d16fc78302d79f0fd30c2fc2fc068",
-        ],
-        ph: [null],
-        fbc: "fb.1.1558723201720.abcde",
-        fbp: "fb.1.1558571054390.1098115397",
-        external_id: [
-          "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
-        ],
-        country: [null],
-      },
-      custom_data: {
-        currency: "USD",
-        value: "142.52",
-      },
-    },
-  ],
-};
-
-//set marketers link inside app
-
-// office
+app.get("/create_facebook_purchase_event", createPurchaseEvent);
+//https://www.wingsofflimits.pro/create_facebook_leads_event?fbclid={subid}&external_id={subid}&campaign_name={campaign_name}&campaign_id={campaign_id}&=true&visitor_code={visitor_code}&user_agent={user_agent}&ip={ip}&offer_id={offer_id}&os={os}&region={region}&city={city}&source={source}
+app.get("/create_facebook_leads_event", createLeadEvent);
 
 // fetch all users
 app.get("/all_users", async (req, res) => {
@@ -781,10 +386,11 @@ app.get("/all_users", async (req, res) => {
 //====={Keitaro reidrects}===========================================
 
 async function getFirstLink(req, link1, user) {
-  // const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts";
+  // const link1 = keitaro_first_campaign;
 
   let link = "";
   let link2 = "";
+  let finalLink = "";
 
   try {
     // Create an HTTPS agent that ignores SSL certificate errors
@@ -816,7 +422,7 @@ async function getFirstLink(req, link1, user) {
     }
     if (link2) {
       try {
-        const finalLink = await getSecondLink(req, link2);
+        finalLink = await getSecondLink(req, link2);
         return finalLink;
       } catch (error) {
         const message =
@@ -825,9 +431,10 @@ async function getFirstLink(req, link1, user) {
             error.response.data.message) ||
           error.message ||
           error.toString();
-        console.log(message);
+        console.log({ "unsupported country error": message });
+        finalLink = white_page;
       }
-      await getSecondLink(req, link2);
+      // await getSecondLink(req, link2);
     }
     // return link2;
   } catch (error) {
@@ -835,11 +442,17 @@ async function getFirstLink(req, link1, user) {
       (error.response && error.response.data && error.response.data.message) ||
       error.message ||
       error.toString();
-    console.log(message);
+    console.log({ "404 error": message });
     console.log({
       stage6: "return error 404 for unsupported region",
     });
+    //New support
+    // const url = white_page;
+    // return url;
+    finalLink = white_page;
   }
+
+  return finalLink;
 }
 
 //request: ClientRequest
@@ -862,13 +475,6 @@ async function getSecondLink(req, link2) {
     if (response.data) {
       const originalUrl = response.request.res.responseUrl;
       console.log("Original URL:", originalUrl);
-      // Accessing the HTML data
-      // const htmlData = response.data;
-      // console.log("HTML Data:", htmlData);
-      // link3 = response.data;
-      // console.log({ response: response });
-
-      // console.log({ link3 });
       link3 = originalUrl;
     }
   }
@@ -888,9 +494,187 @@ async function getSecondLink(req, link2) {
 
 // add advertiser_tracking_id to installed API call in unity app
 
+//const registrationLink= "http://localhost:4000/register/?sub_id_1=NPR&sub_id_2=125"
+
+async function selectCountry2(req, res) {
+  // Get the user's IP address from the request
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  if (campaignStatus === "inactive") {
+    const response = {
+      userId: "",
+      url: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  // for facebook moderation purpose
+  if (campaignStatus === "paused") {
+    const response = {
+      userId: "",
+      url: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  if (campaignStatus === "active") {
+    // Allow localhost without geoip check
+    if (
+      process.env.NODE_ENV === "development" &&
+      (ip === "::1" || ip === "127.0.0.1")
+    ) {
+      // return next(); // Bypass check in development mode
+      const response = {
+        userId: "",
+        url: black_page,
+        page: "black",
+      };
+      return response;
+    }
+
+    // Lookup the country based on the IP address
+    const geo = geoip.lookup(ip);
+
+    if (geo) {
+      const userCountry = geo.country;
+
+      // Check if the user's country is in the supported countries list
+      const countryName = supportedCountries.find(
+        (country) => geoip.getCountryName(userCountry) === country
+      );
+
+      if (countryName) {
+        // User's country is supported, proceed to the next middleware
+
+        const response = {
+          userId: "",
+          url: black_page,
+          page: "black",
+        };
+        return response;
+      } else {
+        // User's country is not supported
+        console.log({ message: "Access denied: Unsupported country" });
+
+        const response = {
+          userId: "",
+          url: white_page,
+          page: "white",
+        };
+
+        console.log({ response });
+        return response;
+      }
+    } else {
+      // If geo lookup fails, deny access
+      console.log({
+        message: "Access denied: Country could not be determined",
+      });
+      const response = {
+        userId: "",
+        url: white_page,
+        page: "white",
+      };
+
+      console.log({ response });
+      return response;
+    }
+  }
+}
+
+async function selectCountry(req, res) {
+  // Get the user's IP address from the request
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  if (campaignStatus === "inactive") {
+    console.log({ message: "campaignStatus in active" });
+    const response = {
+      userId: "",
+      link: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  // for facebook moderation purpose
+  if (campaignStatus === "paused") {
+    console.log({ message: "campaignStatus paused" });
+    const response = {
+      userId: "",
+      link: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  if (campaignStatus === "active") {
+    console.log({ message: "campaignStatus active" });
+
+    // Lookup the country based on the IP address
+    const geo = geoip.lookup(ip);
+
+    if (geo) {
+      const userCountry = geo.country;
+
+      // Check if the user's country is in the supported countries list
+      const countryName = supportedCountries.find(
+        (country) => geoip.getCountryName(userCountry) === country
+      );
+
+      if (countryName) {
+        // User's country is supported, proceed to the next middleware
+
+        const response = {
+          userId: "",
+          link: black_page,
+          page: "black",
+        };
+        return response;
+      } else {
+        // User's country is not supported
+        console.log({ message: "Access denied: Unsupported country" });
+
+        const response = {
+          userId: "",
+          link: white_page,
+          page: "white",
+        };
+
+        console.log({ response });
+        return response;
+      }
+    } else {
+      // Allow localhost without geoip check
+      if (
+        process.env.NODE_ENV === "development" &&
+        (ip === "::1" || ip === "127.0.0.1")
+      ) {
+        console.log({ message: "is local development active" });
+        // return next(); // Bypass check in development mode
+        const response = {
+          userId: "",
+          link: black_page,
+          page: "black",
+        };
+        return response;
+      } else {
+        // If geo lookup fails, deny access
+        console.log({
+          message: "Access denied: Country could not be determined",
+        });
+        const response = {
+          userId: "",
+          link: white_page,
+          page: "white",
+        };
+
+        console.log({ response });
+        return response;
+      }
+    }
+  }
+}
+
 app.get("/register", async (req, res) => {
   console.log("calling host server");
   //======{request objects}====================================
+
   const ip = req.clientIp;
   const requestURL = req.originalUrl; // This will include query parameters, if any
   const { sub_id_1, sub_id_2 } = req.query;
@@ -899,36 +683,82 @@ app.get("/register", async (req, res) => {
   console.log({ requestURL });
   console.log({ Query: req.query });
 
-  const userExistsByIP = await User.findOne({ ipAddress: ip });
+  const userLink = await selectCountry(req, res);
 
-  const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
-  const newPath = path.replace("/register", "");
-  console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
+  console.log({ userLinkSent: userLink });
 
-  if (!userExistsByIP) {
-    console.log("new user");
-    const newUser = await User.create({
-      ipAddress: ip,
-      // userLink: updatedLink,
-      affiliateLink: newPath ? newPath : `/?sub_id_1=organic`, // if there is no request url, then the user is an organic user
-    });
+  // no need to register users from unsupported countries
+  if (userLink?.page == "white") {
+    const response = {
+      userId: "",
+      url: userLink.link,
+      page: userLink.page,
+    };
 
-    if (newUser) {
-      const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+    console.log({ response });
+    res.status(200).json(response);
+  } else {
+    const userExistsByIP = await User.findOne({ ipAddress: ip });
+
+    const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
+    const newPath = path.replace("/register", "");
+    console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
+
+    if (!userExistsByIP) {
+      console.log("new user");
+      const newUser = await User.create({
+        ipAddress: ip,
+        // userLink: updatedLink,
+        affiliateLink: newPath ? newPath : defaultRequestURL, // if there is no request url, then the user is an organic user
+      });
+
+      if (newUser) {
+        const link1 = keitaro_first_campaign; // first campaign
+
+        let newUrl = link1;
+        console.log({ "New user created": newUser });
+
+        if (sub_id_1 || sub_id_2) {
+          newUrl = link1 + newPath;
+        }
+
+        try {
+          const response = {
+            userId: newUser._id,
+            url: userLink.link,
+            page: userLink.page,
+          };
+
+          console.log({ response });
+          res.status(200).json(response);
+        } catch (error) {
+          const message =
+            (error.response &&
+              error.response.data &&
+              error.response.data.message) ||
+            error.message ||
+            error.toString();
+          console.log(message);
+        }
+      }
+    }
+
+    if (userExistsByIP) {
+      //link1:  first campaign to check for supported countries
+      const link1 = keitaro_first_campaign;
 
       let newUrl = link1;
-      console.log({ "New user created": newUser });
+      console.log({ "existing user": userExistsByIP });
 
       if (sub_id_1 || sub_id_2) {
         newUrl = link1 + newPath;
       }
 
       try {
-        const userLink = await getFirstLink(req, newUrl, newUser);
-
         const response = {
-          userId: newUser._id,
-          url: userLink,
+          userId: userExistsByIP._id,
+          url: userLink.link,
+          page: userLink.page,
         };
 
         console.log({ response });
@@ -940,39 +770,8 @@ app.get("/register", async (req, res) => {
             error.response.data.message) ||
           error.message ||
           error.toString();
-        console.log(message);
+        console.log({ "registration error": message });
       }
-    }
-  }
-
-  if (userExistsByIP) {
-    const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
-
-    let newUrl = link1;
-    console.log({ "existing user": userExistsByIP });
-
-    if (sub_id_1 || sub_id_2) {
-      newUrl = link1 + newPath;
-    }
-
-    try {
-      const userLink = await getFirstLink(req, newUrl, userExistsByIP);
-
-      const response = {
-        userId: userExistsByIP._id,
-        url: userLink,
-      };
-
-      console.log({ response });
-      res.status(200).json(response);
-    } catch (error) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-      console.log(message);
     }
   }
 
@@ -990,36 +789,79 @@ async function organicUserRegistration(req, res) {
   console.log({ requestURL });
   console.log({ Query: req.query });
 
-  const userExistsByIP = await User.findOne({ ipAddress: ip });
+  const userLink = await selectCountry(req, res);
 
-  const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
-  const newPath = path.replace("/register", "");
-  // console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
+  // no need to register users from unsupported countries
+  if (userLink?.page == "white") {
+    const response = {
+      userId: "",
+      url: userLink.link,
+      page: userLink.page,
+    };
 
-  if (!userExistsByIP) {
-    console.log("new user");
-    const newUser = await User.create({
-      ipAddress: ip,
-      // userLink: updatedLink,
-      affiliateLink: `/?sub_id_1=organic`, // if there is no request url, then the user is an organic user
-    });
+    console.log({ response });
+    res.status(200).json(response);
+  } else {
+    const userExistsByIP = await User.findOne({ ipAddress: ip });
 
-    if (newUser) {
-      const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
+    const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
+    const newPath = path.replace("/register", "");
+    // console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
+
+    if (!userExistsByIP) {
+      console.log("new user");
+      const newUser = await User.create({
+        ipAddress: ip,
+        // affiliateLink: `/?sub_id_1=organic`, // if there is no request url, then the user is an organic user
+        affiliateLink: defaultRequestURL, // if there is no request url, then the user is an organic user
+      });
+
+      if (newUser) {
+        const link1 = keitaro_first_campaign; // first campaign
+
+        let newUrl = link1;
+        console.log({ "New user created": newUser });
+
+        if (sub_id_1 || sub_id_2) {
+          newUrl = link1 + newPath;
+        }
+
+        try {
+          const response = {
+            userId: newUser._id,
+            url: userLink.link,
+            page: userLink.page,
+          };
+
+          console.log({ response });
+          res.status(200).json(response);
+        } catch (error) {
+          const message =
+            (error.response &&
+              error.response.data &&
+              error.response.data.message) ||
+            error.message ||
+            error.toString();
+          console.log(message);
+        }
+      }
+    }
+
+    if (userExistsByIP) {
+      const link1 = keitaro_first_campaign; // first campaign
 
       let newUrl = link1;
-      console.log({ "New user created": newUser });
+      console.log({ "existing user": userExistsByIP });
 
       if (sub_id_1 || sub_id_2) {
         newUrl = link1 + newPath;
       }
 
       try {
-        const userLink = await getFirstLink(req, newUrl, newUser);
-
         const response = {
-          userId: newUser._id,
-          url: userLink,
+          userId: userExistsByIP._id,
+          url: userLink.link,
+          page: userLink.page,
         };
 
         console.log({ response });
@@ -1033,37 +875,6 @@ async function organicUserRegistration(req, res) {
           error.toString();
         console.log(message);
       }
-    }
-  }
-
-  if (userExistsByIP) {
-    const link1 = "https://wingsofflimitsprivacy.xyz/JMwehgWngsffLmts"; // first campaign
-
-    let newUrl = link1;
-    console.log({ "existing user": userExistsByIP });
-
-    if (sub_id_1 || sub_id_2) {
-      newUrl = link1 + newPath;
-    }
-
-    try {
-      const userLink = await getFirstLink(req, newUrl, userExistsByIP);
-
-      const response = {
-        userId: userExistsByIP._id,
-        url: userLink,
-      };
-
-      console.log({ response });
-      res.status(200).json(response);
-    } catch (error) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-      console.log(message);
     }
   }
 }

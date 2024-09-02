@@ -20,6 +20,7 @@
     "express-async-handler": "^1.2.0",
     "express-rate-limit": "^7.4.0",
     "express-session": "^1.18.0",
+    "geoip-country": "^5.0.202408272258",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.5",
     "nodemailer": "^6.9.14",
