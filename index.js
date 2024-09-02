@@ -609,7 +609,7 @@ async function selectCountry2(req, res) {
 // Middleware to check if the user's country is supported
 async function selectCountry(req, res) {
   // Get the user's IP address from the request
-  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const ip = req.clientIp;
   if (campaignStatus === "inactive") {
     console.log({ message: "campaignStatus in active" });
     const response = {
