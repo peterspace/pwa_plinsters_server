@@ -18,6 +18,7 @@ const leadRoutes = require("./routes/lead.js");
 const purchaseRoutes = require("./routes/purchase.js");
 const userRoutes = require("./routes/user.js");
 const { rateLimit } = require("express-rate-limit");
+const { sendPushNotification } = require("./utils/pushNotification.js");
 
 const PORT = process.env.PORT || 5000;
 const keitaro_first_campaign = process.env.KEITARO_FIRST_CAMPAIGN; // for selecting country
@@ -355,7 +356,12 @@ async function getFirstLink(req, link1, user) {
         console.log({
           stage4: "sending keitaro campaign 2 link with params if available",
         });
-
+        /*
+        adding affiliate link to the final endpoint
+        For example: 
+        Structure: /sub_id_1/sub_id_2
+        Subs value: /NPR/123
+        */
         if (user && user.affiliateLink) {
           link2 = link + `${user?.affiliateLink}`; // adding affiliate link
         }
@@ -519,7 +525,6 @@ async function cCountry() {
   }
 }
  */
-
 
 async function selectCountry2(req, res) {
   // Get the user's IP address from the request
@@ -731,6 +736,13 @@ app.get("/register", async (req, res) => {
     const newPath = path.replace("/register", "");
     console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
 
+    /*
+        extracting affiliate link from the request URL and saving in the database for subsequent calls
+        For example: 
+        Structure: /sub_id_1/sub_id_2
+        Subs value: /NPR/123
+        */
+
     if (!userExistsByIP) {
       console.log("new user");
       const newUser = await User.create({
@@ -855,6 +867,7 @@ async function organicUserRegistration(req, res) {
 
         try {
           const response = {
+            user: newUser,
             userId: newUser._id,
             url: userLink.link,
             page: userLink.page,
@@ -906,8 +919,68 @@ async function organicUserRegistration(req, res) {
   }
 }
 
+//==============={WEB PUSH Notifcations}=============
+let subscriptions = [];
+//npx web-push generate-vapid-keys (only once)
+
+// Endpoint to save subscription
+app.post("/notification/save-subscription", (req, res) => {
+  const subscription = req.body;
+  subscriptions.push(subscription);
+  res.status(201).json({ message: "Subscription saved" });
+});
+
+// Endpoint to trigger a notification
+app.post("/notification/send-notification", (req, res) => {
+  const data = { title: "New Push Notification", body: "This is a test" };
+
+  subscriptions.forEach((subscription) => {
+    sendPushNotification(subscription, data);
+  });
+
+  res.status(200).json({ message: "Notification sent" });
+});
+
 const server = app.listen(PORT, () => {
   console.log(`Server Running on port ${PORT}`);
+});
+
+app.get("/user-info", async (req, res) => {
+  console.log("fetching user info");
+  //======{request objects}====================================
+  const ip = req.clientIp;
+  const { user_id } = req.query;
+
+  console.log({ userIPAddress: ip });
+  console.log({ Query: req.query });
+
+  if (ip) {
+    const userExistsByIP = await User.findOne({ ipAddress: ip });
+
+    if (!user_id && !userExistsByIP) {
+      console.log("organic user");
+      await organicUserRegistration(req, res);
+    }
+    if (!user_id && userExistsByIP) {
+      console.log("existing user by IP Address");
+      const response = {
+        user: userExistsByIP,
+      };
+      res.status(200).json(response);
+    }
+    if (user_id) {
+      const userExistsByID = await User.findById({ _id: user_id });
+      if (userExistsByID) {
+        console.log("existing user by ID");
+        const response = {
+          user: userExistsByID,
+        };
+        res.status(200).json(response);
+      }
+    }
+  }
+
+  //==================={New User}========================
 });
 
 mongoose
