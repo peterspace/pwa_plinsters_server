@@ -97,6 +97,13 @@ const getLeadEvents = async (req, res) => {
   }
 };
 
+async function checkLeadsEvent(){
+  const events = await Lead.find();
+  console.log(events);
+
+}
+// checkLeadsEvent()
+
 const getLeadEventById = async (req, res) => {
   try {
     const { eventId } = req.params;

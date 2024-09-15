@@ -19,7 +19,11 @@ const userSchema = new mongoose.Schema(
       // default:
     },
     pushSubscription: {
-      subscription: String,
+      endpoint: String,
+      keys: {
+        p256dh: String,
+        auth: String,
+      },
     },
     lastLogin: {
       type: Date,

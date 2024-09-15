@@ -2152,6 +2152,8 @@ const registrationConfirmationMsg = async (email, name) => {
   await sendEmail(subject, message, send_to, sent_from);
 };
 
+
+
 module.exports = {
   loginAdmin,
   logout,

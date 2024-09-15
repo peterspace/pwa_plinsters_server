@@ -15,7 +15,6 @@ function hashData(data) {
 }
 
 
-
 const testData = {
   fbclid: "37cionlfj9cd",
   external_id: "37cionlfj9cd",
@@ -94,6 +93,13 @@ const getPurchaseEvents = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+async function checkLeadsEvent(){
+  const events = await Lead.find();
+  console.log(events);
+
+}
+// checkLeadsEvent()
 
 const getPurchaseEventById = async (req, res) => {
   try {

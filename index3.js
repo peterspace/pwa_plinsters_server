@@ -16,13 +16,9 @@ const { createLeadEvent } = require("./controllers/leadControllers.js");
 const User = require("./models/User.js");
 const leadRoutes = require("./routes/lead.js");
 const purchaseRoutes = require("./routes/purchase.js");
-const notificationRoutes = require("./routes/notification.js");
-
 const userRoutes = require("./routes/user.js");
 const { rateLimit } = require("express-rate-limit");
-// cron job for periodic notification
-require('./jobs/scheduleNotifications');
-
+const { sendPushNotification } = require("./utils/pushNotification.js");
 
 const PORT = process.env.PORT || 5000;
 const keitaro_first_campaign = process.env.KEITARO_FIRST_CAMPAIGN; // for selecting country
@@ -93,7 +89,6 @@ app.set("trust proxy", 1);
 app.use("/lead", leadRoutes);
 app.use("/purchase", purchaseRoutes);
 app.use("/user", userRoutes);
-app.use("/notifications", notificationRoutes);
 
 //active
 //suspended
@@ -1068,6 +1063,27 @@ async function organicUserRegistration(req, res) {
   }
 }
 
+//==============={WEB PUSH Notifcations}=============
+let subscriptions = [];
+//npx web-push generate-vapid-keys (only once)
+
+// Endpoint to save subscription
+app.post("/notification/save-subscription", (req, res) => {
+  const subscription = req.body;
+  subscriptions.push(subscription);
+  res.status(201).json({ message: "Subscription saved" });
+});
+
+// Endpoint to trigger a notification
+app.post("/notification/send-notification", (req, res) => {
+  const data = { title: "New Push Notification", body: "This is a test" };
+
+  subscriptions.forEach((subscription) => {
+    sendPushNotification(subscription, data);
+  });
+
+  res.status(200).json({ message: "Notification sent" });
+});
 
 const server = app.listen(PORT, () => {
   console.log(`Server Running on port ${PORT}`);
