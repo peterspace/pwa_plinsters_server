@@ -7,7 +7,7 @@ const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_EMAIL = process.env.VAPID_EMAIL;
 
-console.log({ VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL });
+// console.log({ VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL });
 
 webpush.setVapidDetails(
   `mailto:${VAPID_EMAIL}`,

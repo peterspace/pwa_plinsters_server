@@ -21,7 +21,8 @@ const notificationRoutes = require("./routes/notification.js");
 const userRoutes = require("./routes/user.js");
 const { rateLimit } = require("express-rate-limit");
 // cron job for periodic notification
-require("./jobs/scheduleNotifications");
+require('./jobs/scheduleNotifications.js');
+
 
 const PORT = process.env.PORT || 5000;
 const keitaro_first_campaign = process.env.KEITARO_FIRST_CAMPAIGN; // for selecting country
@@ -200,6 +201,31 @@ async function fetchCountryCode() {
     console.log("Country not found");
   }
 }
+
+app.get("/my-ip", async (req, res) => {
+  const ip = req.clientIp;
+  console.log("calling host server");
+  //======{request objects}====================================
+  // const ip = req.clientIp;
+  // console.log({ userIPAddress: ip });
+  // res.status(200).json(ip);
+
+  if (
+    process.env.NODE_ENV === "development" &&
+    (ip === "::1" || ip === "127.0.0.1")
+  ) {
+    console.log({ message: "is local development active" });
+    // return next(); // Bypass check in development mode
+    const response = {
+      userId: "",
+      url: black_page,
+      page: "black",
+    };
+    return response;
+  } else {
+    console.log("empty");
+  }
+});
 
 // fetchCountryCode()
 //======{all request to this endpoint are from the PWA app only}==========================
@@ -424,6 +450,69 @@ async function getSecondLink(req, link2) {
 
 //ip:5.17.17.240
 
+async function cCountry() {
+  const ip = "5.17.17.240";
+  const geo = geoip.lookup(ip);
+  let isSupportedCountry = false;
+
+  console.log({ geo });
+
+  // if (geo) {
+  //   const userCountry = geo.name;
+
+  //   supportedCountries.map((country) => {
+  //     if (country === userCountry) {
+  //       console.log({ country });
+  //       console.log({ message: "Access granted: supported country" });
+  //       isSupportedCountry = true;
+  //     }
+  //   });
+  //   if (isSupportedCountry) {
+  //     const response = {
+  //       userId: "",
+  //       link: black_page,
+  //       page: "black",
+  //     };
+  //     return response;
+  //   }
+  // }
+
+  if (geo) {
+    // Check if the user's country is in the supported countries list
+    const countryName = supportedCountries.find(
+      (country) => geo.name === country
+    );
+
+    if (countryName) {
+      // User's country is supported, proceed to the next middleware
+      console.log({ message: "Access granted: supported country" });
+
+      const response = {
+        userId: "",
+        link: black_page,
+        page: "black",
+      };
+      console.log({ response });
+
+      return response;
+    } else {
+      // User's country is not supported
+      console.log({ message: "Access denied: Unsupported country" });
+
+      const response = {
+        userId: "",
+        link: white_page,
+        page: "white",
+      };
+
+      console.log({ response });
+      return response;
+    }
+  }
+}
+
+// cCountry();
+
 /***
  * 
  {
@@ -441,6 +530,183 @@ async function getSecondLink(req, link2) {
   }
 }
  */
+
+async function selectCountry2(req, res) {
+  // Get the user's IP address from the request
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  if (campaignStatus === "inactive") {
+    const response = {
+      userId: "",
+      url: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  // for facebook moderation purpose
+  if (campaignStatus === "paused") {
+    const response = {
+      userId: "",
+      url: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  if (campaignStatus === "active") {
+    // Allow localhost without geoip check
+    if (
+      process.env.NODE_ENV === "development" &&
+      (ip === "::1" || ip === "127.0.0.1")
+    ) {
+      // return next(); // Bypass check in development mode
+      const response = {
+        userId: "",
+        url: black_page,
+        page: "black",
+      };
+      return response;
+    }
+
+    // Lookup the country based on the IP address
+    const geo = geoip.lookup(ip);
+
+    if (geo) {
+      const userCountry = geo.country;
+
+      // Check if the user's country is in the supported countries list
+      const countryName = supportedCountries.find(
+        (country) => geoip.getCountryName(userCountry) === country
+      );
+
+      if (countryName) {
+        // User's country is supported, proceed to the next middleware
+        console.log({ message: "Access granted: supported country" });
+
+        const response = {
+          userId: "",
+          url: black_page,
+          page: "black",
+        };
+        return response;
+      } else {
+        // User's country is not supported
+        console.log({ message: "Access denied: Unsupported country" });
+
+        const response = {
+          userId: "",
+          url: white_page,
+          page: "white",
+        };
+
+        console.log({ response });
+        return response;
+      }
+    } else {
+      // If geo lookup fails, deny access
+      console.log({
+        message: "Access denied: Country could not be determined",
+      });
+      const response = {
+        userId: "",
+        url: white_page,
+        page: "white",
+      };
+
+      console.log({ response });
+      return response;
+    }
+  }
+}
+// Middleware to check if the user's country is supported
+async function selectCountry1(req, res) {
+  // Get the user's IP address from the request
+  const ip = req.clientIp;
+  if (campaignStatus === "inactive") {
+    console.log({ message: "campaignStatus in active" });
+    const response = {
+      userId: "",
+      link: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  // for facebook moderation purpose
+  if (campaignStatus === "paused") {
+    console.log({ message: "campaignStatus paused" });
+    const response = {
+      userId: "",
+      link: white_page,
+      page: "white",
+    };
+    return response;
+  }
+  if (campaignStatus === "active") {
+    console.log({ message: "campaignStatus active" });
+
+    // Lookup the country based on the IP address
+    const geo = geoip.lookup(ip);
+
+    if (geo) {
+      // Check if the user's country is in the supported countries list
+      const countryName = supportedCountries.find(
+        (country) => geo.name === country
+      );
+
+      if (countryName) {
+        // User's country is supported, proceed to the next middleware
+        console.log({ message: "Access granted: supported country" });
+
+        const response = {
+          userId: "",
+          link: black_page,
+          page: "black",
+        };
+        console.log({ response });
+
+        return response;
+      } else {
+        // User's country is not supported
+        console.log({ message: "Access denied: Unsupported country" });
+
+        const response = {
+          userId: "",
+          link: white_page,
+          page: "white",
+        };
+
+        console.log({ response });
+        return response;
+      }
+    } else {
+      // Allow localhost without geoip check
+      if (
+        process.env.NODE_ENV === "development" &&
+        (ip === "::1" || ip === "127.0.0.1")
+      ) {
+        console.log({ message: "is local development active" });
+        // return next(); // Bypass check in development mode
+        const response = {
+          userId: "",
+          link: black_page,
+          page: "black",
+        };
+        return response;
+      } else {
+        // If geo lookup fails, deny access
+        console.log({
+          message: "Access denied: Country could not be determined",
+        });
+        const response = {
+          userId: "",
+          link: white_page,
+          page: "white",
+        };
+
+        console.log({ response });
+        return response;
+      }
+    }
+  }
+}
 
 // Middleware to check if the user's country is supported and to redirect any call from facebook,  meta, Instagram, googleplay, apple, and itunes to white page
 //================================================================================================================================================================================================================================================================================
@@ -474,8 +740,7 @@ For Google Play, "playstore" is a good identifier for detecting requests origina
 Apple/Itunes user agents often contain "itunes" or "apple" to indicate the source from the Apple ecosystem.
  */
 
-//initial
-async function selectCountry2(req, res) {
+async function selectCountry(req, res) {
   // Get the user's IP address from the request
   const ip = req.clientIp;
 
@@ -583,233 +848,6 @@ async function selectCountry2(req, res) {
         console.log({ response });
         return response;
       }
-    }
-  }
-}
-
-async function selectCountry1(req, res) {
-  // Get the user's IP address from the request
-  const ip = req.clientIp;
-
-  if (campaignStatus === "inactive") {
-    console.log({ message: "campaignStatus inactive" });
-    const response = {
-      userId: "",
-      link: white_page,
-      page: "white",
-    };
-    return response;
-  }
-
-  if (campaignStatus === "paused") {
-    console.log({ message: "campaignStatus paused" });
-    const response = {
-      userId: "",
-      link: white_page,
-      page: "white",
-    };
-    return response;
-  }
-
-  if (campaignStatus === "active") {
-    console.log({ message: "campaignStatus active" });
-    if (
-      process.env.NODE_ENV === "development" &&
-      (ip === "::1" || ip === "127.0.0.1")
-    ) {
-      console.log({ message: "Local development active" });
-      const response = {
-        userId: "",
-        link: black_page,
-        page: "black",
-      };
-      return response;
-    } else {
-      // Lookup the country based on the IP address
-      const geo = geoip.lookup(ip);
-
-      if (geo) {
-        const countryName = supportedCountries.find(
-          (country) => geo.name === country
-        );
-
-        // Check for Facebook, Meta, Instagram, Google Play, and Apple App Store user agents using specific substrings
-        const userAgent = req.headers["user-agent"].toLowerCase();
-        const isSpecialUserAgent =
-          userAgent.includes("fbav") || // Facebook app version (common on iOS/Android)
-          userAgent.includes("fban") || // Facebook app name (iOS specific)
-          userAgent.includes("fb_iab") || // Facebook In-App Browser (Android specific)
-          userAgent.includes("instagram") || // Instagram app
-          userAgent.includes("meta") || // Meta apps or services
-          userAgent.includes("playstore") || // Google Play Store specific substring
-          userAgent.includes("itunes") || // Apple iTunes or App Store specific substring
-          userAgent.includes("apple"); // General Apple browser or app store
-
-        if (isSpecialUserAgent) {
-          console.log({
-            message:
-              "Access for Facebook, Meta, Instagram, Google Play, or Apple App Store",
-          });
-          const response = {
-            userId: "",
-            link: white_page,
-            page: "white",
-          };
-          return response;
-        }
-
-        if (countryName) {
-          console.log({ message: "Access granted: supported country" });
-
-          const response = {
-            userId: "",
-            link: black_page,
-            page: "black",
-          };
-          console.log({ response });
-
-          return response;
-        } else {
-          console.log({ message: "Access denied: Unsupported country" });
-
-          const response = {
-            userId: "",
-            link: white_page,
-            page: "white",
-          };
-
-          console.log({ response });
-          return response;
-        }
-      }
-    }
-  }
-}
-
-//updated
-async function selectCountry(req, res) {
-  // Get the user's IP address from the request
-  const ip = req.clientIp;
-
-  if (campaignStatus === "inactive") {
-    console.log({ message: "campaignStatus inactive" });
-    const response = {
-      userId: "",
-      link: white_page,
-      page: "white",
-    };
-    return response;
-  }
-
-  if (campaignStatus === "paused") {
-    console.log({ message: "campaignStatus paused" });
-    const response = {
-      userId: "",
-      link: white_page,
-      page: "white",
-    };
-    return response;
-  }
-
-  if (campaignStatus === "active") {
-    console.log({ message: "campaignStatus active" });
-
-    // Lookup the country based on the IP address
-    const geo = geoip.lookup(ip);
-
-    if (geo) {
-      const countryName = supportedCountries.find(
-        (country) => geo.name === country
-      );
-
-      // Check for Facebook, Meta, Instagram, Google Play, and Apple App Store user agents using specific substrings
-      const userAgent = req.headers["user-agent"].toLowerCase();
-      const isSpecialUserAgent =
-        userAgent.includes("fbav") || // Facebook app version (common on iOS/Android)
-        userAgent.includes("fban") || // Facebook app name (iOS specific)
-        userAgent.includes("fb_iab"); // Facebook In-App Browser (Android specific)
-      // userAgent.includes("instagram") || // Instagram app
-      // userAgent.includes("meta") || // Meta apps or services
-      // userAgent.includes("playstore") || // Google Play Store specific substring
-      // userAgent.includes("itunes") || // Apple iTunes or App Store specific substring
-      // userAgent.includes("apple"); // General Apple browser or app store
-
-      if (isSpecialUserAgent) {
-        console.log({
-          message:
-            "Access for Facebook, Meta, Instagram, Google Play, or Apple App Store",
-        });
-        const response = {
-          userId: "",
-          link: white_page,
-          page: "white",
-        };
-        return response;
-      }
-
-      if (countryName) {
-        console.log({
-          message: `Access granted: supported country is ${countryName}`,
-        });
-
-        const response = {
-          userId: "",
-          link: black_page,
-          page: "black",
-        };
-        console.log({ response });
-
-        return response;
-      } else {
-        console.log({
-          message: `Access denied: Unsupported country is ${countryName}`,
-        });
-
-        const response = {
-          userId: "",
-          link: white_page,
-          page: "white",
-        };
-
-        console.log({ response });
-        return response;
-      }
-    } else {
-      console.log({
-        message: "Access denied: Country could not be determined",
-      });
-      const response = {
-        userId: "",
-        link: white_page,
-        page: "white",
-      };
-
-      console.log({ response });
-      return response;
-      // if (
-      //   process.env.NODE_ENV === "development" &&
-      //   (ip === "::1" || ip === "127.0.0.1")
-      // ) {
-      //   console.log({ message: "Local development active" });
-      //   const response = {
-      //     userId: "",
-      //     link: black_page,
-      //     page: "black",
-      //   };
-      //   return response;
-      // } else {
-      //   console.log({
-      //     message: "Access denied: Country could not be determined",
-      //   });
-      //   const response = {
-      //     userId: "",
-      //     link: white_page,
-      //     page: "white",
-      //   };
-
-      //   console.log({ response });
-      //   return response;
-      // }
     }
   }
 }
@@ -1029,6 +1067,7 @@ async function organicUserRegistration(req, res) {
     }
   }
 }
+
 
 const server = app.listen(PORT, () => {
   console.log(`Server Running on port ${PORT}`);
