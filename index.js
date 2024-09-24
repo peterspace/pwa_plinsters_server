@@ -1083,40 +1083,10 @@ app.get("/register", async (req, res) => {
         Subs value: /NPR/123
         */
 
-    if (userExistsByIP) {
-      //link1:  first campaign to check for supported countries
-      const link1 = keitaro_first_campaign;
-
-      let newUrl = link1;
-      console.log({ "existing user": userExistsByIP });
-
-      if (sub_id_1 || sub_id_2) {
-        newUrl = link1 + newPath;
-      }
-
-      try {
-        const response = {
-          userId: userExistsByIP._id,
-          url: userLink.link,
-          page: userLink.page,
-        };
-
-        console.log({ response });
-        res.status(200).json(response);
-      } catch (error) {
-        const message =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          error.toString();
-        console.log({ "registration error": message });
-      }
-    } else {
+    if (!userExistsByIP) {
       console.log("new user");
       const newUser = await User.create({
         ipAddress: ip,
-        // userLink: updatedLink,
         affiliateLink: newPath ? newPath : defaultRequestURL, // if there is no request url, then the user is an organic user
       });
 
@@ -1222,36 +1192,6 @@ async function organicUserRegistration(req, res) {
             error.toString();
           console.log(message);
         }
-      }
-    }
-
-    if (userExistsByIP) {
-      const link1 = keitaro_first_campaign; // first campaign
-
-      let newUrl = link1;
-      console.log({ "existing user": userExistsByIP });
-
-      if (sub_id_1 || sub_id_2) {
-        newUrl = link1 + newPath;
-      }
-
-      try {
-        const response = {
-          userId: userExistsByIP._id,
-          url: userLink.link,
-          page: userLink.page,
-        };
-
-        console.log({ response });
-        res.status(200).json(response);
-      } catch (error) {
-        const message =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          error.toString();
-        console.log(message);
       }
     }
   }
