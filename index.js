@@ -29,6 +29,7 @@ const white_page = process.env.WHITE_PAGE_LINK;
 const black_page = process.env.BLACK_PAGE_LINK;
 const campaignStatus = process.env.CAMPAIGN_STATUS;
 const defaultRequestURL = process.env.DEFAULT_REQUEST_URL;
+const backend = process.env.BACKEND_URL;
 // List of supported countries
 // Convert the comma-separated string from the environment variable to an array
 const supportedCountries = process.env.SUPPORTED_COUNTRIES.split(",");
@@ -687,7 +688,8 @@ async function selectCountry1(req, res) {
 }
 
 //updated
-async function selectCountryLive(req, res) {
+// async function selectCountryLive(req, res) {
+async function selectCountry(req, res) {
   // Get the user's IP address from the request
   const ip = req.clientIp;
 
@@ -810,6 +812,7 @@ async function selectCountryLive(req, res) {
 }
 
 async function selectCountryLocal(req, res) {
+  // async function selectCountry(req, res) {
   // Get the user's IP address from the request
   const ip = req.clientIp;
 
@@ -921,7 +924,7 @@ async function selectCountryLocal(req, res) {
   }
 }
 
-async function selectCountry(req, res) {
+async function selectCountry1(req, res) {
   // Get the user's IP address from the request
   const ip = req.clientIp;
 
@@ -1072,6 +1075,8 @@ app.get("/register", async (req, res) => {
   } else {
     const userExistsByIP = await User.findOne({ ipAddress: ip });
 
+    console.log({ userExistsByIP });
+
     const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
     const newPath = path.replace("/register", "");
     console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
@@ -1083,7 +1088,36 @@ app.get("/register", async (req, res) => {
         Subs value: /NPR/123
         */
 
-    if (!userExistsByIP) {
+    if (userExistsByIP) {
+      //link1:  first campaign to check for supported countries
+      const link1 = keitaro_first_campaign;
+
+      let newUrl = link1;
+      console.log({ "existing user": userExistsByIP });
+
+      if (sub_id_1 || sub_id_2) {
+        newUrl = link1 + newPath;
+      }
+
+      try {
+        const response = {
+          userId: userExistsByIP._id,
+          url: userLink.link,
+          page: userLink.page,
+        };
+
+        console.log({ response });
+        res.status(200).json(response);
+      } catch (error) {
+        const message =
+          (error.response &&
+            error.response.data &&
+            error.response.data.message) ||
+          error.message ||
+          error.toString();
+        console.log({ "registration error": message });
+      }
+    } else {
       console.log("new user");
       const newUser = await User.create({
         ipAddress: ip,
@@ -1155,7 +1189,36 @@ async function organicUserRegistration(req, res) {
     const newPath = path.replace("/register", "");
     // console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
 
-    if (!userExistsByIP) {
+    if (userExistsByIP) {
+      //link1:  first campaign to check for supported countries
+      const link1 = keitaro_first_campaign;
+
+      let newUrl = link1;
+      console.log({ "existing user": userExistsByIP });
+
+      if (sub_id_1 || sub_id_2) {
+        newUrl = link1 + newPath;
+      }
+
+      try {
+        const response = {
+          userId: userExistsByIP._id,
+          url: userLink.link,
+          page: userLink.page,
+        };
+
+        console.log({ response });
+        res.status(200).json(response);
+      } catch (error) {
+        const message =
+          (error.response &&
+            error.response.data &&
+            error.response.data.message) ||
+          error.message ||
+          error.toString();
+        console.log({ "registration error": message });
+      }
+    } else {
       console.log("new user");
       const newUser = await User.create({
         ipAddress: ip,
