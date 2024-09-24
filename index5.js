@@ -687,240 +687,6 @@ async function selectCountry1(req, res) {
 }
 
 //updated
-async function selectCountryLive(req, res) {
-  // Get the user's IP address from the request
-  const ip = req.clientIp;
-
-  if (campaignStatus === "inactive") {
-    console.log({ message: "campaignStatus inactive" });
-    const response = {
-      userId: "",
-      link: white_page,
-      page: "white",
-    };
-    return response;
-  }
-
-  if (campaignStatus === "paused") {
-    console.log({ message: "campaignStatus paused" });
-    const response = {
-      userId: "",
-      link: white_page,
-      page: "white",
-    };
-    return response;
-  }
-
-  if (campaignStatus === "active") {
-    console.log({ message: "campaignStatus active" });
-
-    // Lookup the country based on the IP address
-    const geo = geoip.lookup(ip);
-
-    if (geo) {
-      const countryName = supportedCountries.find(
-        (country) => geo.name === country
-      );
-
-      // Check for Facebook, Meta, Instagram, Google Play, and Apple App Store user agents using specific substrings
-      const userAgent = req.headers["user-agent"].toLowerCase();
-      const isSpecialUserAgent =
-        userAgent.includes("fbav") || // Facebook app version (common on iOS/Android)
-        userAgent.includes("fban") || // Facebook app name (iOS specific)
-        userAgent.includes("fb_iab"); // Facebook In-App Browser (Android specific)
-
-      if (isSpecialUserAgent) {
-        console.log({
-          message:
-            "Access for Facebook, Meta, Instagram, Google Play, or Apple App Store",
-        });
-        const response = {
-          userId: "",
-          link: white_page,
-          page: "white",
-        };
-        return response;
-      }
-
-      if (countryName) {
-        console.log({
-          message: `Access granted: supported country is ${countryName}`,
-        });
-
-        const response = {
-          userId: "",
-          link: black_page,
-          page: "black",
-        };
-        console.log({ response });
-
-        return response;
-      } else {
-        console.log({
-          message: `Access denied: Unsupported country is ${countryName}`,
-        });
-
-        const response = {
-          userId: "",
-          link: white_page,
-          page: "white",
-        };
-
-        console.log({ response });
-        return response;
-      }
-    } else {
-      console.log({
-        message: "Access denied: Country could not be determined",
-      });
-      const response = {
-        userId: "",
-        link: white_page,
-        page: "white",
-      };
-
-      console.log({ response });
-      return response;
-      // if (
-      //   process.env.NODE_ENV === "development" &&
-      //   (ip === "::1" || ip === "127.0.0.1")
-      // ) {
-      //   console.log({ message: "Local development active" });
-      //   const response = {
-      //     userId: "",
-      //     link: black_page,
-      //     page: "black",
-      //   };
-      //   return response;
-      // } else {
-      //   console.log({
-      //     message: "Access denied: Country could not be determined",
-      //   });
-      //   const response = {
-      //     userId: "",
-      //     link: white_page,
-      //     page: "white",
-      //   };
-
-      //   console.log({ response });
-      //   return response;
-      // }
-    }
-  }
-}
-
-async function selectCountryLocal(req, res) {
-  // Get the user's IP address from the request
-  const ip = req.clientIp;
-
-  if (campaignStatus === "inactive") {
-    console.log({ message: "campaignStatus inactive" });
-    const response = {
-      userId: "",
-      link: white_page,
-      page: "white",
-    };
-    return response;
-  }
-
-  if (campaignStatus === "paused") {
-    console.log({ message: "campaignStatus paused" });
-    const response = {
-      userId: "",
-      link: white_page,
-      page: "white",
-    };
-    return response;
-  }
-
-  if (campaignStatus === "active") {
-    console.log({ message: "campaignStatus active" });
-
-    // Lookup the country based on the IP address
-    const geo = geoip.lookup(ip);
-
-    if (geo) {
-      const countryName = supportedCountries.find(
-        (country) => geo.name === country
-      );
-
-      // Check for Facebook, Meta, Instagram, Google Play, and Apple App Store user agents using specific substrings
-      const userAgent = req.headers["user-agent"].toLowerCase();
-      const isSpecialUserAgent =
-        userAgent.includes("fbav") || // Facebook app version (common on iOS/Android)
-        userAgent.includes("fban") || // Facebook app name (iOS specific)
-        userAgent.includes("fb_iab") || // Facebook In-App Browser (Android specific)
-        userAgent.includes("instagram") || // Instagram app
-        userAgent.includes("meta") || // Meta apps or services
-        userAgent.includes("playstore") || // Google Play Store specific substring
-        userAgent.includes("itunes") || // Apple iTunes or App Store specific substring
-        userAgent.includes("apple"); // General Apple browser or app store
-
-      if (isSpecialUserAgent) {
-        console.log({
-          message:
-            "Access for Facebook, Meta, Instagram, Google Play, or Apple App Store",
-        });
-        const response = {
-          userId: "",
-          link: white_page,
-          page: "white",
-        };
-        return response;
-      }
-
-      if (countryName) {
-        console.log({ message: "Access granted: supported country" });
-
-        const response = {
-          userId: "",
-          link: black_page,
-          page: "black",
-        };
-        console.log({ response });
-
-        return response;
-      } else {
-        console.log({ message: "Access denied: Unsupported country" });
-
-        const response = {
-          userId: "",
-          link: white_page,
-          page: "white",
-        };
-
-        console.log({ response });
-        return response;
-      }
-    } else {
-      if (
-        process.env.NODE_ENV === "development" &&
-        (ip === "::1" || ip === "127.0.0.1")
-      ) {
-        console.log({ message: "Local development active" });
-        const response = {
-          userId: "",
-          link: black_page,
-          page: "black",
-        };
-        return response;
-      } else {
-        console.log({
-          message: "Access denied: Country could not be determined",
-        });
-        const response = {
-          userId: "",
-          link: white_page,
-          page: "white",
-        };
-
-        console.log({ response });
-        return response;
-      }
-    }
-  }
-}
-
 async function selectCountry(req, res) {
   // Get the user's IP address from the request
   const ip = req.clientIp;
@@ -962,6 +728,11 @@ async function selectCountry(req, res) {
         userAgent.includes("fbav") || // Facebook app version (common on iOS/Android)
         userAgent.includes("fban") || // Facebook app name (iOS specific)
         userAgent.includes("fb_iab"); // Facebook In-App Browser (Android specific)
+      // userAgent.includes("instagram") || // Instagram app
+      // userAgent.includes("meta") || // Meta apps or services
+      // userAgent.includes("playstore") || // Google Play Store specific substring
+      // userAgent.includes("itunes") || // Apple iTunes or App Store specific substring
+      // userAgent.includes("apple"); // General Apple browser or app store
 
       if (isSpecialUserAgent) {
         console.log({
@@ -1083,36 +854,7 @@ app.get("/register", async (req, res) => {
         Subs value: /NPR/123
         */
 
-    if (userExistsByIP) {
-      //link1:  first campaign to check for supported countries
-      const link1 = keitaro_first_campaign;
-
-      let newUrl = link1;
-      console.log({ "existing user": userExistsByIP });
-
-      if (sub_id_1 || sub_id_2) {
-        newUrl = link1 + newPath;
-      }
-
-      try {
-        const response = {
-          userId: userExistsByIP._id,
-          url: userLink.link,
-          page: userLink.page,
-        };
-
-        console.log({ response });
-        res.status(200).json(response);
-      } catch (error) {
-        const message =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          error.toString();
-        console.log({ "registration error": message });
-      }
-    } else {
+    if (!userExistsByIP) {
       console.log("new user");
       const newUser = await User.create({
         ipAddress: ip,
@@ -1148,6 +890,37 @@ app.get("/register", async (req, res) => {
             error.toString();
           console.log(message);
         }
+      }
+    }
+
+    if (userExistsByIP) {
+      //link1:  first campaign to check for supported countries
+      const link1 = keitaro_first_campaign;
+
+      let newUrl = link1;
+      console.log({ "existing user": userExistsByIP });
+
+      if (sub_id_1 || sub_id_2) {
+        newUrl = link1 + newPath;
+      }
+
+      try {
+        const response = {
+          userId: userExistsByIP._id,
+          url: userLink.link,
+          page: userLink.page,
+        };
+
+        console.log({ response });
+        res.status(200).json(response);
+      } catch (error) {
+        const message =
+          (error.response &&
+            error.response.data &&
+            error.response.data.message) ||
+          error.message ||
+          error.toString();
+        console.log({ "registration error": message });
       }
     }
   }
@@ -1252,114 +1025,6 @@ async function organicUserRegistration(req, res) {
           error.message ||
           error.toString();
         console.log(message);
-      }
-    }
-  }
-}
-
-//http://localhost:4000/register/?sub_id_1=aboba&sub_id_2=256'
-async function organicUserRegistrationTest(req, res) {
-  console.log("calling host server");
-  //======{request objects}====================================
-  const ip = "";
-  const requestURL =
-    "http://localhost:4000/register/?sub_id_1=aboba&sub_id_2=256"; // This will include query parameters, if any
-  // const { sub_id_1, sub_id_2 } = req.query;
-
-  const sub_id_1 = "aboba";
-  const sub_id_2 = "256";
-
-  console.log({ userIPAddress: ip });
-  console.log({ requestURL });
-  console.log({ Query: req.query });
-
-  const userLink = {
-    userId: "",
-    link: black_page,
-    page: "black",
-  };
-
-  // no need to register users from unsupported countries
-  if (userLink?.page == "white") {
-    const response = {
-      userId: "",
-      url: userLink.link,
-      page: userLink.page,
-    };
-
-    console.log({ response });
-    res.status(200).json(response);
-  } else {
-    const userExistsByIP = await User.findOne({ ipAddress: ip });
-
-    const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
-    const newPath = path.replace("/register", "");
-    // console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
-    if (userExistsByIP) {
-      const link1 = keitaro_first_campaign; // first campaign
-
-      let newUrl = link1;
-      console.log({ "existing user": userExistsByIP });
-
-      if (sub_id_1 || sub_id_2) {
-        newUrl = link1 + newPath;
-      }
-
-      try {
-        const response = {
-          userId: userExistsByIP._id,
-          url: userLink.link,
-          page: userLink.page,
-        };
-
-        console.log({ response });
-        res.status(200).json(response);
-      } catch (error) {
-        const message =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          error.toString();
-        console.log(message);
-      }
-    } else {
-      console.log("new user");
-      const newUser = await User.create({
-        ipAddress: ip,
-        // affiliateLink: `/?sub_id_1=organic`, // if there is no request url, then the user is an organic user
-        affiliateLink: defaultRequestURL, // if there is no request url, then the user is an organic user
-      });
-
-      if (newUser) {
-        const link1 = keitaro_first_campaign; // first campaign
-
-        let newUrl = link1;
-        console.log({ "New user created": newUser });
-
-        if (sub_id_1 || sub_id_2) {
-          newUrl = link1 + newPath;
-        }
-
-        try {
-          const response = {
-            user: newUser,
-            userId: newUser._id,
-            url: userLink.link,
-            page: userLink.page,
-          };
-
-          console.log({ response });
-          res.status(200).json(response);
-        } catch (error) {
-          const message =
-            (error.response &&
-              error.response.data &&
-              error.response.data.message) ||
-            error.message ||
-            error.toString();
-          console.log(message);
-        }
       }
     }
   }
