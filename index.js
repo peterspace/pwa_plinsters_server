@@ -1183,18 +1183,22 @@ async function organicUserRegistration(req, res) {
     console.log({ response });
     res.status(200).json(response);
   } else {
-    const userExistsByIP = await User.findOne({ ipAddress: ip });
-
     const path = requestURL; //"/register/?sub_id_1=NPR&sub_id_2=NPR";
     const newPath = path.replace("/register", "");
     // console.log({ newPath }); // Output: "/?sub_id_1=NPR&sub_id_2=NPR"
 
-    if (userExistsByIP) {
-      //link1:  first campaign to check for supported countries
-      const link1 = keitaro_first_campaign;
+    console.log("new user");
+    const newUser = await User.create({
+      ipAddress: ip,
+      // affiliateLink: `/?sub_id_1=organic`, // if there is no request url, then the user is an organic user
+      affiliateLink: defaultRequestURL, // if there is no request url, then the user is an organic user
+    });
+
+    if (newUser) {
+      const link1 = keitaro_first_campaign; // first campaign
 
       let newUrl = link1;
-      console.log({ "existing user": userExistsByIP });
+      console.log({ "New user created": newUser });
 
       if (sub_id_1 || sub_id_2) {
         newUrl = link1 + newPath;
@@ -1202,7 +1206,8 @@ async function organicUserRegistration(req, res) {
 
       try {
         const response = {
-          userId: userExistsByIP._id,
+          user: newUser,
+          userId: newUser._id,
           url: userLink.link,
           page: userLink.page,
         };
@@ -1216,45 +1221,7 @@ async function organicUserRegistration(req, res) {
             error.response.data.message) ||
           error.message ||
           error.toString();
-        console.log({ "registration error": message });
-      }
-    } else {
-      console.log("new user");
-      const newUser = await User.create({
-        ipAddress: ip,
-        // affiliateLink: `/?sub_id_1=organic`, // if there is no request url, then the user is an organic user
-        affiliateLink: defaultRequestURL, // if there is no request url, then the user is an organic user
-      });
-
-      if (newUser) {
-        const link1 = keitaro_first_campaign; // first campaign
-
-        let newUrl = link1;
-        console.log({ "New user created": newUser });
-
-        if (sub_id_1 || sub_id_2) {
-          newUrl = link1 + newPath;
-        }
-
-        try {
-          const response = {
-            user: newUser,
-            userId: newUser._id,
-            url: userLink.link,
-            page: userLink.page,
-          };
-
-          console.log({ response });
-          res.status(200).json(response);
-        } catch (error) {
-          const message =
-            (error.response &&
-              error.response.data &&
-              error.response.data.message) ||
-            error.message ||
-            error.toString();
-          console.log(message);
-        }
+        console.log(message);
       }
     }
   }
@@ -1372,7 +1339,7 @@ const server = app.listen(PORT, () => {
   console.log(`Server Running on port ${PORT}`);
 });
 
-app.get("/user-info", async (req, res) => {
+app.get("/user-info1", async (req, res) => {
   console.log("fetching user info");
   //======{request objects}====================================
   const ip = req.clientIp;
@@ -1403,6 +1370,45 @@ app.get("/user-info", async (req, res) => {
           user: userExistsByID,
         };
         res.status(200).json(response);
+      }
+    }
+  }
+
+  //==================={New User}========================
+});
+
+app.get("/user-info", async (req, res) => {
+  console.log("fetching user info");
+  //======{request objects}====================================
+  const ip = req.clientIp;
+  const { user_id } = req.query;
+
+  console.log({ userIPAddress: ip });
+  console.log({ Query: req.query });
+  const userExistsByIP = await User.findOne({ ipAddress: ip });
+
+  let userExistsByID;
+  if (user_id) {
+    userExistsByID = await User.findById({ _id: user_id });
+  }
+
+  if (userExistsByID) {
+    console.log("existing user by ID");
+    const response = {
+      user: userExistsByID,
+    };
+    res.status(200).json(response);
+  } else {
+    if (userExistsByIP) {
+      console.log("existing user by IP Address");
+      const response = {
+        user: userExistsByIP,
+      };
+      res.status(200).json(response);
+    } else {
+      {
+        console.log("organic user");
+        await organicUserRegistration(req, res);
       }
     }
   }
