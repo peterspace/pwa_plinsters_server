@@ -204,8 +204,12 @@ async function fetchCountryCode() {
 
 // fetchCountryCode()
 
-app.get("/", async (req, res) => {
-  console.log("calling host server main");
+app.get("/", (req, res) => {
+  const ip = req.clientIp;
+  console.log({ ip });
+  return res.json({
+    ip,
+  });
 });
 //======{all request to these endpoint are from the Keitaro server only}==========================
 
@@ -294,8 +298,8 @@ Apple/Itunes user agents often contain "itunes" or "apple" to indicate the sourc
  */
 
 //updated
-async function selectCountryLive(req, res) {
-  // async function selectCountry(req, res) {
+// async function selectCountryLive(req, res) {
+async function selectCountry(req, res) {
   // Get the user's IP address from the request
   const ip = req.clientIp;
 
@@ -412,8 +416,8 @@ async function selectCountryLive(req, res) {
   }
 }
 
-// async function selectCountryLocal(req, res) {
-async function selectCountry(req, res) {
+async function selectCountryLocal(req, res) {
+  // async function selectCountry(req, res) {
   // Get the user's IP address from the request
   const ip = req.clientIp;
 
