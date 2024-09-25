@@ -415,7 +415,7 @@ async function selectCountry(req, res) {
     }
   }
 }
-
+//======{Allow testing in development mode}=====================
 async function selectCountryLocal(req, res) {
   // async function selectCountry(req, res) {
   // Get the user's IP address from the request
@@ -638,7 +638,7 @@ async function createNewUser(ip, referralLink, device) {
   }
 }
 
-app.post("/user-info", async (req, res) => {
+app.post("/user-info1", async (req, res) => {
   console.log("fetching user info");
 
   const ip = req.clientIp;
@@ -679,6 +679,71 @@ app.post("/user-info", async (req, res) => {
   }
 });
 
+app.post("/user-info", async (req, res) => {
+  console.log("fetching user info");
+
+  const ip = req.clientIp;
+  const { user_id, device } = req.body;
+
+  console.log({ userIPAddress: ip });
+  console.log({ userData: req.body });
+  try {
+    // Priority 1: Check with user_id
+    if (user_id) {
+      const userExistsByID = await User.findById(user_id);
+      if (userExistsByID) {
+        console.log({
+          info: "old user found by user_id and opening the app through the user-info route ",
+        });
+
+        if (userExistsByID.appInstalled == false) {
+          const updatedUser = await updateUserPWAInstall(
+            userExistsByID._id,
+            true
+          );
+          console.log({ updatedUser });
+        }
+        console.log("Existing user by ID");
+        return res.status(200).json({ user: userExistsByID });
+      } else {
+        console.log({
+          info: "old user by user_id is using the user-info route by opening the app, but the user is no longer on the database due to database cleanup",
+        });
+        console.log("User not found by User ID, creating new account.");
+        const newUser = await createNewUser(ip, defaultRequestURL, device);
+        return res.status(201).json({ user: newUser });
+      }
+    }
+
+    if (ip) {
+      const users = await User.find({ ipAddress: ip }).sort({ updatedAt: -1 }); //1 for ascending and -1 for descending (descending means having the most recently updated at the top)
+      if (users) {
+        console.log({
+          info: "new user found by ip and opening the app for the first time in the PWA through the user-info route ",
+        });
+        // consider updating the attribute "appInstalled" to true at this stage
+        const userByIp = users[0];
+        if (userByIp.appInstalled == false) {
+          const updatedUser = await updateUserPWAInstall(userByIp._id, true);
+          console.log({ updatedUser });
+        }
+
+        return res.status(200).json({ user: userByIp });
+      } else {
+        console.log({
+          info: "old user not found by user_id and ip due to database cleanup",
+        });
+        console.log("User not found by IP Address, creating new account.");
+        const newUser = await createNewUser(ip, defaultRequestURL, device);
+        return res.status(201).json({ user: newUser });
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching user info:", error);
+    return res.status(500).json({ message: "Internal Server Error." });
+  }
+});
+
 async function updateUsers() {
   const users = await User.find();
 
@@ -709,10 +774,63 @@ async function updateUserInfo(id) {
 async function findDuplicatedUsersByIpAddress() {
   // let ip = "35.230.46.208";
   let ip = "::1";
-  const users = await User.find({ ipAddress: ip });
+  // let ip = "178.66.145.99";
+  //
+  // const users = await User.find({ ipAddress: ip });
+  const users = await User.find({ ipAddress: ip }).sort({ updatedAt: -1 }); //1 for ascending and -1 for descending (descending means having the most recently updated at the top)
   console.log({ users });
 }
-// findDuplicatedUsersByIpAddress()
+
+async function findAndUpdateUserInstall() {
+  // let ip = "35.230.46.208";
+  let ip = "::1";
+  // let ip = "178.66.145.99";
+  //
+  // const users = await User.find({ ipAddress: ip });
+  const users = await User.find({ ipAddress: ip }).sort({ updatedAt: -1 }); //1 for ascending and -1 for descending (descending means having the most recently updated at the top)
+  console.log({ users });
+
+  let user = users[0];
+
+  const updatedUser = await updateUserPWAInstall(user._id, true);
+
+  console.log({ updatedUser });
+}
+// findAndUpdateUserInstall()
+const updateUserPWAInstall = async (userId, appInstalled) => {
+  let updatedUser;
+
+  try {
+    const user = await User.findById(userId);
+    if (user) {
+      user.appInstalled = appInstalled;
+      updatedUser = await user.save();
+
+      if (updatedUser) {
+        console.log({ message: "user app install updated" });
+        return updatedUser;
+      }
+    }
+  } catch (error) {
+    console.log({ message: error.message });
+  }
+};
+
+const deleteUser = async (user) => {
+  const userId = user._id;
+  try {
+    const deletedUser = await User.findByIdAndDelete(userId);
+    if (!deletedUser) {
+      console.log({ message: "User not found" });
+      // return res.status(404).json({ message: "User not found" })
+    }
+    console.log({ message: "User not found" });
+    // res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.log({ message: error.message });
+    // res.status(400).json({ message: error.message });
+  }
+};
 
 const server = app.listen(PORT, () => {
   console.log(`Server Running on port ${PORT}`);
