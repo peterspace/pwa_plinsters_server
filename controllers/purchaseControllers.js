@@ -31,6 +31,8 @@ const testData = {
   source: "",
 };
 
+//new sub_id_28={sub_id_28}// user_id matching mongodb user._id
+
 // const purchaseURL =
 //   "http://localhost:4000/create_facebook_purchase_event?fbclid=37cionlfj9cd&external_id=37cionlfj9cd&campaign_name=iOS+46+%2F+Wings+Off+Limits+%2F+%D0%9E%D1%84%D1%84%D0%B5%D1%80&campaign_id=345&=true&visitor_code=37cionl&user_agent=Mozilla%2F5.0+%28iPhone%3B+CPU+iPhone+OS+17_5_1+like+Mac+OS+X%29+AppleWebKit%2F605.1.15+%28KHTML%2C+like+Gecko%29+Mobile%2F15E148&ip=185.250.45.208&offer_id=910&os=iOS&region=NL_ZH&city=Naaldwijk&source=";
 
@@ -56,13 +58,16 @@ const createPurchaseEvent = async (req, res) => {
       offer,
       region,
       city,
+      sub_id_28,
     } = req.query;
+
+    console.log({purchaseInfo: req.query})
 
     const user = await getUserByIPAddress(ip);
     if (user) {
       const newPurchaseEvent = new Purchase({
         eventType: "Purchase",
-        userId: user._id,
+        userId: sub_id_28 ? sub_id_28 : user._id,// user_id from keitaro since may users could be using the same IP address for example using a home/office wifi
         fbclid, // profile.id,
         external_id, // profile.id,
         campaign_name,

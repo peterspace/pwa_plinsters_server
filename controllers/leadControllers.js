@@ -58,14 +58,17 @@ const createLeadEvent = async (req, res) => {
       offer,
       region,
       city,
+      sub_id_28,
     } = req.query;
+
+    console.log({ leadInfo: req.query });
     console.log("verifying user");
     const user = await getUserByIPAddress(ip);
     if (user) {
       console.log("user exist");
       const newLeadEvent = new Lead({
         eventType: "Lead",
-        userId: user._id,
+        userId: sub_id_28 ? sub_id_28 : user._id, // user_id from keitaro since may users could be using the same IP address for example using a home/office wifi
         fbclid, // profile.id,
         external_id, // profile.id,
         campaign_name,
@@ -97,10 +100,9 @@ const getLeadEvents = async (req, res) => {
   }
 };
 
-async function checkLeadsEvent(){
+async function checkLeadsEvent() {
   const events = await Lead.find();
   console.log(events);
-
 }
 // checkLeadsEvent()
 
