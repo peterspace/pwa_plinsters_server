@@ -15,6 +15,12 @@ const notificationSchema = new mongoose.Schema({
     ref: "User", // Assuming you have a User model
     default: [], // Empty array means target all users
   },
+  icon: {
+    type: String,
+  },
+  link: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

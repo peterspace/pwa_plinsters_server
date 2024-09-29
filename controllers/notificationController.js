@@ -1,126 +1,46 @@
 // controllers/notificationController.js
 const Notification = require("../models/Notification");
 const User = require("../models/User"); // Assuming you have a User model
-const webpush = require("web-push");
+const PushNotifications = require("node-pushnotifications");
 
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_EMAIL = process.env.VAPID_EMAIL;
+//===={new approach}================================
+const publicVapidKey = process.env.VAPID_PUBLIC_KEY; // REPLACE_WITH_YOUR_KEY
+const privateVapidKey = process.env.VAPID_PRIVATE_KEY; //REPLACE_WITH_YOUR_KEY
+const frontend = process.env.FRONTEND_URL;
 
-// console.log({ VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL });
+// console.log({ subscription });
+const settings = {
+  web: {
+    vapidDetails: {
+      subject: "mailto: <peter.space.io@gmail.com>", // REPLACE_WITH_YOUR_EMAIL
+      publicKey: publicVapidKey,
+      privateKey: privateVapidKey,
+    },
+    gcmAPIKey: "gcmkey",
+    TTL: 2419200,
+    contentEncoding: "aes128gcm",
+    headers: {},
+  },
+  isAlwaysUseFCM: false,
+};
 
-webpush.setVapidDetails(
-  `mailto:${VAPID_EMAIL}`,
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
+// Send 201 - resource created
+const push = new PushNotifications(settings);
 
 // Create a new notification
 const createNotification = async (req, res) => {
   try {
-    const { title, body, targetUsers } = req.body;
+    const { title, body, targetUsers, icon, link } = req.body;
     const notification = new Notification({
       title,
       body,
       targetUsers,
+      icon,
+      link,
     });
     await notification.save();
     res.status(201).json(notification);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Send a notification to targeted users or all users
-const sendNotification1 = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const notification = await Notification.findById(id);
-    if (!notification) {
-      return res.status(404).json({ message: "Notification not found" });
-    }
-
-    const users =
-      notification.targetUsers.length > 0
-        ? await User.find({ _id: { $in: notification.targetUsers } })
-        : await User.find({}); // If no target users, send to all users
-
-    const payload = JSON.stringify({
-      title: notification.title,
-      body: notification.body,
-    });
-
-    const userPushPromises = users.map(async (user) => {
-      if (user.pushSubscription) {
-        try {
-          await webpush.sendNotification(user.pushSubscription, payload);
-        } catch (error) {
-          console.error("Failed to send push notification", error);
-        }
-      }
-    });
-
-    await Promise.all(userPushPromises);
-
-    notification.status = "sent";
-    notification.sentAt = new Date();
-    await notification.save();
-
-    res.status(200).json({ message: "Notification sent" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-const sendNotification2 = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const notification = await Notification.findById(id);
-    if (!notification) {
-      return res.status(404).json({ message: "Notification not found" });
-    }
-
-    const users =
-      notification.targetUsers.length > 0
-        ? await User.find({ _id: { $in: notification.targetUsers } })
-        : await User.find({}); // If no target users, send to all users
-
-    const payload = JSON.stringify({
-      title: notification.title,
-      body: notification.body,
-    });
-
-    const userPushPromises = users.map(async (user) => {
-      if (user.pushSubscription) {
-        // Log the subscription object for debugging purposes
-        console.log(
-          "Sending to user:",
-          user._id,
-          "Subscription:",
-          user.pushSubscription
-        );
-
-        if (user.pushSubscription.endpoint) {
-          try {
-            await webpush.sendNotification(user.pushSubscription, payload);
-          } catch (error) {
-            console.error("Failed to send push notification", error);
-          }
-        } else {
-          console.error("Missing endpoint for user:", user._id);
-        }
-      } else {
-        console.error("User has no pushSubscription:", user._id);
-      }
-    });
-
-    await Promise.all(userPushPromises);
-
-    notification.status = "sent";
-    notification.sentAt = new Date();
-    await notification.save();
-
-    res.status(200).json({ message: "Notification sent" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -142,21 +62,24 @@ const sendNotification = async (req, res) => {
     const payload = JSON.stringify({
       title: notification.title,
       body: notification.body,
+      icon:
+        notification.icon || "https://firebase.google.com/images/social.png",
+      link: notification.icon || frontend,
     });
 
     console.log({ payload });
 
     const userPushPromises = users.map(async (user) => {
       if (user.pushSubscription && user.pushSubscription.endpoint) {
-        try {
-          const response = await webpush.sendNotification(
-            user.pushSubscription,
-            payload
-          );
-          console.log({ pushResponse: response });
-        } catch (error) {
-          console.error(`Failed to send notification to ${user._id}:`, error);
-        }
+        const subscription = user.pushSubscription;
+
+        push.send(subscription, payload, (err, result) => {
+          if (err) {
+            console.log({ pushError: err });
+          } else {
+            console.log({ pushResponse: result });
+          }
+        });
       }
     });
 
@@ -224,11 +147,77 @@ const subscribeUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update user's push subscription
-    user.pushSubscription.subscription = subscription;
-    await user.save();
-    console.log({ message: "User subscribed to push notifications" });
+    if (user.pushSubscription) {
+      // user had previously subscribed, then update the subscription information
+      user.pushSubscription.subscription = subscription;
+      const updatedUser = await user.save();
+      res
+        .status(200)
+        .json({ message: "User already subscribed to push notifications" });
+    } else {
+      // add new user subscription
+      user.pushSubscription.subscription = subscription;
+      const updatedUser = await user.save();
 
+      const payload = {
+        title: "Notification from 1xBet",
+        body: "Thank you for subscribing",
+        // icon: "https://firebase.google.com/images/social.png",
+        link: `${frontend}`,
+      };
+      console.log({ payload });
+      if (updatedUser) {
+        push.send(subscription, payload, (err, result) => {
+          if (err) {
+            console.log({ pushError: err });
+          } else {
+            console.log({ pushResponse: result });
+          }
+        });
+      }
+      console.log({ message: "User subscribed to push notifications" });
+      res
+        .status(200)
+        .json({ message: "User subscribed to push notifications" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const subscribeUserTest = async (req, res) => {
+  try {
+    const { userId, subscription } = req.body;
+
+    console.log({ content: req.body });
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // add new user subscription
+    user.pushSubscription.subscription = subscription;
+    const updatedUser = await user.save();
+
+    const payload = {
+      title: "Notification from 1xBet",
+      body: "Thank you for subscribing",
+      // icon: "https://firebase.google.com/images/social.png",
+      link: `${frontend}`,
+    };
+    console.log({ payload });
+    if (updatedUser) {
+      push.send(subscription, payload, (err, result) => {
+        if (err) {
+          console.log({ pushError: err });
+        } else {
+          console.log({ pushResponse: result });
+        }
+      });
+    }
+    console.log({ message: "User subscribed to push notifications" });
     res.status(200).json({ message: "User subscribed to push notifications" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -301,26 +290,6 @@ const unsubscribeUserInternal = async (res) => {
 
 // unsubscribeUserInternal()
 
-const broadcast1 = async (req, res) => {
-  try {
-    const notification = { title: "Hey, this is a push notification!" };
-
-    const subscriptions = await subscriptionRepository.getAll();
-
-    const notifications = [];
-    subscriptions.forEach((subscription) => {
-      notifications.push(
-        webpush.sendNotification(subscription, JSON.stringify(notification))
-      );
-    });
-
-    await Promise.all(notifications);
-    res.sendStatus(200);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 const broadcast = async (req, res) => {
   const notifications = await Notification.find();
   if (!notifications) {
@@ -341,21 +310,24 @@ const broadcast = async (req, res) => {
       const payload = JSON.stringify({
         title: notification.title,
         body: notification.body,
+        icon:
+          notification.icon || "https://firebase.google.com/images/social.png",
+        link: notification.icon || frontend,
       });
 
       console.log({ payload });
-
+      // Send 201 - resource created
       const userPushPromises = users.map(async (user) => {
         if (user.pushSubscription && user.pushSubscription.endpoint) {
-          try {
-            const response = await webpush.sendNotification(
-              user.pushSubscription,
-              payload
-            );
-            console.log({ pushResponse: response });
-          } catch (error) {
-            console.error(`Failed to send notification to ${user._id}:`, error);
-          }
+          const subscription = user.pushSubscription;
+
+          push.send(subscription, payload, (err, result) => {
+            if (err) {
+              console.log({ pushError: err });
+            } else {
+              console.log({ pushResponse: result });
+            }
+          });
         }
       });
 

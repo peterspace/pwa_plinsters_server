@@ -21,8 +21,15 @@ const userSchema = new mongoose.Schema(
       default: "User", // "User" and "Admin"
       // default:
     },
+    // pushSubscription: {
+    //   subscription: String,
+    // },
     pushSubscription: {
-      subscription: String,
+      endpoint: String,
+      keys: {
+        p256dh: String,
+        auth: String,
+      },
     },
     lastLogin: {
       type: Date,
