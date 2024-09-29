@@ -34,6 +34,7 @@ const backend = process.env.BACKEND_URL;
 // Convert the comma-separated string from the environment variable to an array
 const supportedCountries = process.env.SUPPORTED_COUNTRIES.split(",");
 console.log({ campaignStatus });
+console.log("checking commits")
 
 //ip rate limit
 // const limiter = rateLimit({
