@@ -328,7 +328,6 @@ async function createNewUser(ip, referralLink, device) {
   }
 }
 
-
 app.post("/user-info", async (req, res) => {
   console.log("fetching user info");
 
@@ -352,6 +351,14 @@ app.post("/user-info", async (req, res) => {
             true
           );
           console.log({ updatedUser });
+        }
+        if (!userExistsByID.ipAddress) {
+          userExistsByID.ipAddress = ip;
+          const updatedUser = await userExistsByID.save();
+
+          if (updatedUser) {
+            console.log({ message: "user ip updated" });
+          }
         }
         console.log("Existing user by ID");
         return res.status(200).json({ user: userExistsByID });
