@@ -21,7 +21,7 @@ const notificationRoutes = require("./routes/notification.js");
 const userRoutes = require("./routes/user.js");
 const { rateLimit } = require("express-rate-limit");
 // cron job for periodic notification
-require("./jobs/scheduleNotifications");
+require("./jobs/scheduleNotifications.js");
 
 const PORT = process.env.PORT || 5000;
 const keitaro_first_campaign = process.env.KEITARO_FIRST_CAMPAIGN; // for selecting country
@@ -227,6 +227,7 @@ app.get("/all_users", async (req, res) => {
   }
 });
 
+
 //======{new}===============================
 app.post("/register", async (req, res) => {
   console.log("calling register endpoint");
@@ -236,7 +237,7 @@ app.post("/register", async (req, res) => {
   console.log({ userIPAddress: ip });
   console.log({ userData: req.body });
 
-  let referralLink = id ? `/?${id}` : null;
+  let referralLink = id ? `/?${id}` : defaultRequestURL;
   // Allow multiple registration with same ip with different devices or browsers and for different ips
   try {
     // Priority 1: Check if `user_id` is provided and valid
@@ -285,44 +286,27 @@ app.post("/register", async (req, res) => {
   }
 });
 
+
 async function createNewUser(ip, referralLink, device) {
   let updatedUser;
   if (device) {
-    if (referralLink) {
-      const newUser = await User.create({
-        device: device,
-      });
-      console.log({ "New user created": newUser });
+    const newUser = await User.create({
+      ipAddress: ip,
+      affiliateLink: referralLink, // If there is no request URL, the user is considered organic.
+      device: device,
+    });
+    console.log({ "New user created": newUser });
 
-      if (newUser && referralLink) {
-        const user = await User.findById(newUser._id);
-        if (user) {
-          user.affiliateLink = `${referralLink}&user_id=${newUser._id.toString()}`;
-          updatedUser = await user.save();
-          console.log({ updatedUser });
-        }
-        return updatedUser;
-      } else {
-        return newUser;
+    if (newUser) {
+      const user = await User.findById(newUser._id);
+      if (user) {
+        user.affiliateLink = `${referralLink}&user_id=${newUser._id.toString()}`;
+        updatedUser = await user.save();
+        console.log({ updatedUser });
       }
+      return updatedUser;
     } else {
-      const newUser = await User.create({
-        ipAddress: ip,
-        device: device,
-      });
-      console.log({ "New user created": newUser });
-
-      if (newUser) {
-        const user = await User.findById(newUser._id);
-        if (user) {
-          user.affiliateLink = `?user_id=${newUser._id.toString()}`;
-          updatedUser = await user.save();
-          console.log({ updatedUser });
-        }
-        return updatedUser;
-      } else {
-        return newUser;
-      }
+      return newUser;
     }
   }
 }
@@ -399,7 +383,7 @@ app.post("/user-info", async (req, res) => {
           info: "old user by user_id is using the user-info route by opening the app, but the user is no longer on the database due to database cleanup",
         });
         console.log("User not found by User ID, creating new account.");
-        const newUser = await createNewUser(ip, null, device);
+        const newUser = await createNewUser(ip, defaultRequestURL, device);
         return res.status(201).json({ user: newUser });
       }
     }
@@ -423,7 +407,7 @@ app.post("/user-info", async (req, res) => {
           info: "old user not found by user_id and ip due to database cleanup",
         });
         console.log("User not found by IP Address, creating new account.");
-        const newUser = await createNewUser(ip, null, device);
+        const newUser = await createNewUser(ip, defaultRequestURL, device);
         return res.status(201).json({ user: newUser });
       }
     }
