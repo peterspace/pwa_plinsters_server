@@ -50,24 +50,24 @@ const registerUser = asyncHandler(async (req, res) => {
   //backend
 
   if (!userExists) {
-   console.log("new user");
+    console.log("new user");
 
-   const newUser = await User.create({
-     ipAddress: ip,
-     // userLink: sub_id_1 ? requestURL : defaultRequestURL,
-     userLink: newUserURL,
-   });
+    const newUser = await User.create({
+      ipAddress: ip,
+      // userLink: sub_id_1 ? requestURL : defaultRequestURL,
+      userLink: newUserURL,
+    });
 
-   if (newUser) {
-     console.log({ "New user created": newUser });
-     const appStoreLink = process.env.APP_STORE_LINK;
-     console.log("app install in progress");
-     return res.redirect(appStoreLink);
-   }
+    if (newUser) {
+      console.log({ "New user created": newUser });
+      const appStoreLink = process.env.APP_STORE_LINK;
+      console.log("app install in progress");
+      return res.redirect(appStoreLink);
+    }
   } else {
-   const appStoreLink = process.env.APP_STORE_LINK;
-   console.log("app install in progress");
-   return res.redirect(appStoreLink);
+    const appStoreLink = process.env.APP_STORE_LINK;
+    console.log("app install in progress");
+    return res.redirect(appStoreLink);
   }
 });
 
@@ -2151,8 +2151,6 @@ const registrationConfirmationMsg = async (email, name) => {
 
   await sendEmail(subject, message, send_to, sent_from);
 };
-
-
 
 module.exports = {
   loginAdmin,

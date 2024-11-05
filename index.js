@@ -6,6 +6,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+
 const axios = require("axios");
 var geoip = require("geoip-country");
 
@@ -61,7 +62,12 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use(bodyParser.json());
 app.use(express.static("public"));
-app.use(cors());
+// app.use(cors());
+const corsConfig = {
+  credentials: true,
+  origin: true,
+};
+app.use(cors(corsConfig));
 
 // app.use(limiter);
 

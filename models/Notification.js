@@ -2,6 +2,10 @@
 const mongoose = require("mongoose");
 
 const notificationSchema = new mongoose.Schema({
+  adminId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin",
+  },
   title: {
     type: String,
     required: true,
@@ -12,8 +16,8 @@ const notificationSchema = new mongoose.Schema({
   },
   targetUsers: {
     type: [mongoose.Schema.Types.ObjectId],
-    ref: "User", // Assuming you have a User model
-    default: [], // Empty array means target all users
+    ref: "User",
+    default: [],
   },
   icon: {
     type: String,
@@ -31,8 +35,32 @@ const notificationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "sent"],
+    enum: ["pending", "sent", "scheduled"],
     default: "pending",
+  },
+  isRecurring: {
+    type: Boolean,
+    default: false,
+  },
+  scheduleTime: {
+    type: String, // Format: 'HH:mm' for daily time, or use cron expressions for flexibility
+    required: false,
+  },
+  recurrence: {
+    type: {
+      type: String,
+      enum: ["daily", "weekly", "custom"],
+      default: "daily",
+    },
+    //check since we are passing weekdays in strings
+    daysOfWeek: {
+      type: [Number], // Array of days (0 = Sunday, 1 = Monday, etc.) for weekly recurrence
+      default: [],
+    },
+    cronExpression: {
+      type: String, // Custom cron expression for complex schedules
+      required: false,
+    },
   },
 });
 

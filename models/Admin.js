@@ -2,15 +2,28 @@ const mongoose = require("mongoose");
 
 const adminSchema = new mongoose.Schema(
   {
-    ipAddress: String, //'',
-    deviceId: String, // profile.id,
-    adminLink: String, // profile.id,
-    appsflyer_id: String, //'', //
-    advertiserTrackingId: String, // idfa
-    affiliateLink: String,
+    name: String,
+    email: { type: "String", unique: true },
+    // email: { type: String},
+    password: String,
+
+    photo: {
+      type: "String",
+      default:
+        "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
+    },
+    isAdmin: {
+      type: Boolean,
+      // required: true,
+      default: false,
+    },
+    level: {
+      type: Number,
+      default: 0, //0 meanse user, admin begins from 1-5
+    },
     role: {
       type: String,
-      default: "admin", // "admin" and "Admin"
+      default: "Admin", // "User" and "Admin"
       // default:
     },
   },

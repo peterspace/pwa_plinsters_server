@@ -1,8 +1,6 @@
 // controllers/notificationController.js
-const cron = require("node-cron");
 const Notification = require("../models/Notification");
 const User = require("../models/User"); // Assuming you have a User model
-const Admin = require("../models/Admin");
 const PushNotifications = require("node-pushnotifications");
 
 const VAPID_EMAIL = process.env.VAPID_EMAIL;
@@ -30,149 +28,8 @@ const settings = {
 // Send 201 - resource created
 const push = new PushNotifications(settings);
 
-// Helper function to schedule a notification
-const scheduleNotification = (notification) => {
-  let cronTime;
-
-  if (notification.isRecurring) {
-    if (notification.recurrence.type === "daily") {
-      const [hour, minute] = notification.scheduleTime.split(":");
-      cronTime = `${minute} ${hour} * * *`; // Every day at the specified time
-    } else if (notification.recurrence.type === "weekly") {
-      const days = notification.recurrence.daysOfWeek.join(",");
-      const [hour, minute] = notification.scheduleTime.split(":");
-      cronTime = `${minute} ${hour} * * ${days}`; // Weekly on selected days
-    } else if (notification.recurrence.type === "custom") {
-      cronTime = notification.recurrence.cronExpression; // Custom cron expression
-    }
-  } else {
-    const [hour, minute] = notification.scheduleTime.split(":");
-    cronTime = `${minute} ${hour} * * *`; // Default to daily at specified time if not recurring
-  }
-
-  cron.schedule(cronTime, async () => {
-    await sendNotificationById(notification._id);
-  });
-};
-
-// Helper function to send a notification by ID
-const sendNotificationById = async (notificationId) => {
-  const notification = await Notification.findById(notificationId);
-  if (!notification) {
-    console.log("Notification not found");
-    return;
-  }
-
-  if (notification.status === "sent") {
-    console.log("Notification sent");
-    return;
-  }
-
-  try {
-    const users =
-      notification.targetUsers.length > 0
-        ? await User.find({ _id: { $in: notification.targetUsers } })
-        : await User.find({}); // If no target users, send to all users
-
-    const payload = JSON.stringify({
-      title: notification.title,
-      body: notification.body,
-      icon: notification.icon || "",
-      link: notification.icon || frontend,
-    });
-
-    console.log({ payload });
-
-    const userPushPromises = users.map(async (user) => {
-      if (user.pushSubscription && user.pushSubscription.endpoint) {
-        const subscription = user.pushSubscription;
-
-        push.send(subscription, payload, (err, result) => {
-          if (err) {
-            console.log({ pushError: err });
-          } else {
-            console.log({ pushResponse: result });
-          }
-        });
-      }
-    });
-
-    await Promise.all(userPushPromises);
-
-    notification.status = "sent";
-    notification.sentAt = new Date();
-    await notification.save();
-
-    res.status(200).json({ message: "Notification sent" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Modified createNotification function with scheduling support
-const createNotification = async (req, res) => {
-  console.log("creating notification");
-  // const admin = await Admin.findById(req.user._id);
-  const admin = await Admin.findById(req.body.adminId);
-
-  if (!admin) {
-    const message = "Unauthorized user";
-    res.status(400).json(message);
-  }
-
-  console.log({ adminUser: admin?._id });
-  try {
-    const {
-      title,
-      body,
-      targetUsers,
-      scheduleTime,
-      isRecurring,
-      recurrence,
-      icon,
-      link,
-    } = req.body;
-    const notification = new Notification({
-      adminId: admin?._id,
-      title,
-      body,
-      targetUsers,
-      scheduleTime,
-      isRecurring,
-      recurrence,
-      icon,
-      link,
-      status: scheduleTime ? "scheduled" : "pending",
-    });
-
-    await notification.save();
-
-    // Schedule the notification if there's a schedule time
-    if (scheduleTime) {
-      scheduleNotification(notification);
-    }
-
-    console.log({ notification });
-
-    res.status(201).json(notification);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Initialize scheduled notifications when the server starts
-const initializeScheduledNotifications = async () => {
-  const scheduledNotifications = await Notification.find({
-    status: "scheduled",
-  });
-  scheduledNotifications.forEach(scheduleNotification);
-};
-
-// Call this function when your server starts
-initializeScheduledNotifications();
-
 // Create a new notification
-const createSingleNotification = async (req, res) => {
+const createNotification = async (req, res) => {
   try {
     const { title, body, targetUsers, icon, link } = req.body;
     const notification = new Notification({
@@ -205,51 +62,8 @@ const sendNotification = async (req, res) => {
     const payload = JSON.stringify({
       title: notification.title,
       body: notification.body,
-      icon: notification.icon || "",
-      link: notification.icon || frontend,
-    });
-
-    console.log({ payload });
-
-    const userPushPromises = users.map(async (user) => {
-      if (user.pushSubscription && user.pushSubscription.endpoint) {
-        const subscription = user.pushSubscription;
-
-        push.send(subscription, payload, (err, result) => {
-          if (err) {
-            console.log({ pushError: err });
-          } else {
-            console.log({ pushResponse: result });
-          }
-        });
-      }
-    });
-
-    await Promise.all(userPushPromises);
-
-    notification.status = "sent";
-    notification.sentAt = new Date();
-    await notification.save();
-
-    res.status(200).json({ message: "Notification sent" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-const sendTargetGroupNotification = async (req, res) => {
-  const { id, days } = req.body;
-  try {
-    const notification = await Notification.findById(id);
-    if (!notification) {
-      return res.status(404).json({ message: "Notification not found" });
-    }
-    const users = await notificationTargetGroup(days);
-
-    const payload = JSON.stringify({
-      title: notification.title,
-      body: notification.body,
-      icon: notification.icon || "",
+      icon:
+        notification.icon || "https://firebase.google.com/images/social.png",
       link: notification.icon || frontend,
     });
 
@@ -300,18 +114,6 @@ sample result:
  */
 
 // Get all notifications
-
-const getNotificationsById = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const notification = await Notification.findById(id);
-
-    res.status(200).json(notification);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
 const getAllNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find();
@@ -346,12 +148,12 @@ const subscribeUser = async (req, res) => {
 
     if (user.pushSubscription) {
       // user had previously subscribed, then update the subscription information
-      user.pushSubscription = subscription;
+      user.pushSubscription.subscription = subscription;
       const updatedUser = await user.save();
       //==========={Start: For testing only }=========================
       const payload = {
         title: "Notification from 1xBet",
-        body: "Thank you for subscribing with us",
+        body: "Thank you for subscribing",
         // icon: "https://firebase.google.com/images/social.png",
         link: `${frontend}`,
       };
@@ -371,7 +173,7 @@ const subscribeUser = async (req, res) => {
         .json({ message: "User already subscribed to push notifications" });
     } else {
       // add new user subscription
-      user.pushSubscription = subscription;
+      user.pushSubscription.subscription = subscription;
       const updatedUser = await user.save();
 
       const payload = {
@@ -415,14 +217,14 @@ const subscribeUserOriginal = async (req, res) => {
 
     if (user.pushSubscription) {
       // user had previously subscribed, then update the subscription information
-      user.pushSubscription = subscription;
+      user.pushSubscription.subscription = subscription;
       const updatedUser = await user.save();
       res
         .status(200)
         .json({ message: "User already subscribed to push notifications" });
     } else {
       // add new user subscription
-      user.pushSubscription = subscription;
+      user.pushSubscription.subscription = subscription;
       const updatedUser = await user.save();
 
       const payload = {
@@ -464,7 +266,7 @@ const subscribeUserTest = async (req, res) => {
     }
 
     // add new user subscription
-    user.pushSubscription = subscription;
+    user.pushSubscription.subscription = subscription;
     const updatedUser = await user.save();
 
     const payload = {
@@ -610,89 +412,11 @@ const broadcast = async (req, res) => {
   });
 };
 
-const notificationTargetGroup = async (days) => {
-  const users = await User.find();
-  let targetUsers = [];
-
-  let today = new Date();
-  console.log({ today });
-
-  for (const user of users) {
-    let lastLogin = user.lastLogin;
-
-    const differenceInDays = await timeDifference(today, lastLogin);
-    // last seen greater than "days"
-    // if (differenceInDays > days) {
-    //   targetUsers.push(user);
-    // }
-
-    // last seen less than "days"
-    if (differenceInDays < days) {
-      targetUsers.push(user);
-    }
-  }
-  console.log({ targetUsers });
-  return targetUsers; // Return the array after processing all users
-};
-
-// notificationTargetGroup(30)
-
-const oneWeekAgoGroup = async () => {
-  const users = await User.find();
-  let oneWeekAgo = [];
-
-  let today = new Date();
-  console.log({ today });
-
-  for (const user of users) {
-    let lastLogin = user.lastLogin;
-
-    const differenceInDays = await timeDifference(today, lastLogin);
-
-    if (differenceInDays > 7) {
-      oneWeekAgo.push(user);
-    }
-  }
-  console.log({ response: oneWeekAgo });
-  return oneWeekAgo; // Return the array after processing all users
-};
-
-// oneWeekAgoGroup()
-
-// getOneWeekAgo()
-
-async function timeDifference(timeNow, lastLogin) {
-  // const timeNow = "2024-11-04T15:52:50.933Z";
-  // const lastLogin = "2024-09-30T14:18:36.089Z";
-
-  const dateNow = new Date(timeNow);
-  const dateLastLogin = new Date(lastLogin);
-
-  const differenceInMilliseconds = dateNow - dateLastLogin;
-
-  // console.log({ dateNow, dateLastLogin, differenceInMilliseconds });
-
-  const differenceInDays = Math.floor(
-    differenceInMilliseconds / (1000 * 60 * 60 * 24)
-  );
-
-  console.log(differenceInDays);
-
-  //3029654844
-
-  return differenceInDays;
-}
-
-// timeDifference()
-
 module.exports = {
   createNotification,
-  createSingleNotification,
-  getNotificationsById,
   getAllNotifications,
   deleteNotification,
   sendNotification,
-  sendTargetGroupNotification,
   subscribeUser,
   unsubscribeUser,
   broadcast,
