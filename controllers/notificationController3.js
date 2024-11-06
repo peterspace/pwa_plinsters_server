@@ -3,8 +3,7 @@ const cron = require("node-cron");
 const Notification = require("../models/Notification");
 const User = require("../models/User"); // Assuming you have a User model
 const Admin = require("../models/Admin");
-// const PushNotifications = require("node-pushnotifications");
-const webpush = require("web-push");
+const PushNotifications = require("node-pushnotifications");
 
 const VAPID_EMAIL = process.env.VAPID_EMAIL;
 //===={new approach}================================
@@ -12,33 +11,24 @@ const publicVapidKey = process.env.VAPID_PUBLIC_KEY; // REPLACE_WITH_YOUR_KEY
 const privateVapidKey = process.env.VAPID_PRIVATE_KEY; //REPLACE_WITH_YOUR_KEY
 const frontend = process.env.FRONTEND_URL;
 
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
-
-webpush.setVapidDetails(
-  "mailto: peter.space.io@gmail.com",
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
-
 // console.log({ subscription });
-// const settings = {
-//   web: {
-//     vapidDetails: {
-//       subject: "mailto: <peter.space.io@gmail.com>", // REPLACE_WITH_YOUR_EMAIL
-//       publicKey: publicVapidKey,
-//       privateKey: privateVapidKey,
-//     },
-//     gcmAPIKey: "gcmkey",
-//     TTL: 2419200,
-//     contentEncoding: "aes128gcm",
-//     headers: {},
-//   },
-//   isAlwaysUseFCM: false,
-// };
+const settings = {
+  web: {
+    vapidDetails: {
+      subject: "mailto: <peter.space.io@gmail.com>", // REPLACE_WITH_YOUR_EMAIL
+      publicKey: publicVapidKey,
+      privateKey: privateVapidKey,
+    },
+    gcmAPIKey: "gcmkey",
+    TTL: 2419200,
+    contentEncoding: "aes128gcm",
+    headers: {},
+  },
+  isAlwaysUseFCM: false,
+};
 
 // Send 201 - resource created
-// const push = new PushNotifications(settings);
+const push = new PushNotifications(settings);
 
 // Helper function to schedule a notification
 const scheduleNotification = (notification) => {
@@ -97,27 +87,13 @@ const sendNotificationById = async (notificationId) => {
       if (user.pushSubscription && user.pushSubscription.endpoint) {
         const subscription = user.pushSubscription;
 
-        // push.send(subscription, payload, (err, result) => {
-        //   if (err) {
-        //     console.log({ pushError: err });
-        //   } else {
-        //     console.log({ pushResponse: result });
-        //   }
-        // });
-        // Send the notification
-        // Send the notification
-        webpush
-          .sendNotification(subscription, payload)
-          .then(() =>
-            console.log({
-              success: true,
-              message: "Notification sent successfully",
-            })
-          )
-          .catch((error) => {
-            console.error("Error sending notification", error);
-            console.log({ success: false, message: "Notification failed" });
-          });
+        push.send(subscription, payload, (err, result) => {
+          if (err) {
+            console.log({ pushError: err });
+          } else {
+            console.log({ pushResponse: result });
+          }
+        });
       }
     });
 
@@ -239,26 +215,13 @@ const sendNotification = async (req, res) => {
       if (user.pushSubscription && user.pushSubscription.endpoint) {
         const subscription = user.pushSubscription;
 
-        // push.send(subscription, payload, (err, result) => {
-        //   if (err) {
-        //     console.log({ pushError: err });
-        //   } else {
-        //     console.log({ pushResponse: result });
-        //   }
-        // });
-        // Send the notification
-        webpush
-          .sendNotification(subscription, payload)
-          .then(() =>
-            console.log({
-              success: true,
-              message: "Notification sent successfully",
-            })
-          )
-          .catch((error) => {
-            console.error("Error sending notification", error);
-            console.log({ success: false, message: "Notification failed" });
-          });
+        push.send(subscription, payload, (err, result) => {
+          if (err) {
+            console.log({ pushError: err });
+          } else {
+            console.log({ pushResponse: result });
+          }
+        });
       }
     });
 
@@ -296,26 +259,13 @@ const sendTargetGroupNotification = async (req, res) => {
       if (user.pushSubscription && user.pushSubscription.endpoint) {
         const subscription = user.pushSubscription;
 
-        // push.send(subscription, payload, (err, result) => {
-        //   if (err) {
-        //     console.log({ pushError: err });
-        //   } else {
-        //     console.log({ pushResponse: result });
-        //   }
-        // });
-        // Send the notification
-        webpush
-          .sendNotification(subscription, payload)
-          .then(() =>
-            console.log({
-              success: true,
-              message: "Notification sent successfully",
-            })
-          )
-          .catch((error) => {
-            console.error("Error sending notification", error);
-            console.log({ success: false, message: "Notification failed" });
-          });
+        push.send(subscription, payload, (err, result) => {
+          if (err) {
+            console.log({ pushError: err });
+          } else {
+            console.log({ pushResponse: result });
+          }
+        });
       }
     });
 
@@ -382,7 +332,7 @@ const deleteNotification = async (req, res) => {
   }
 };
 
-const subscribeUser1 = async (req, res) => {
+const subscribeUser = async (req, res) => {
   try {
     const { userId, subscription } = req.body;
 
@@ -395,7 +345,6 @@ const subscribeUser1 = async (req, res) => {
     }
 
     if (user.pushSubscription) {
-      console.log("user has subscription");
       // user had previously subscribed, then update the subscription information
       user.pushSubscription = subscription;
       const updatedUser = await user.save();
@@ -406,53 +355,15 @@ const subscribeUser1 = async (req, res) => {
       //   // icon: "https://firebase.google.com/images/social.png",
       //   link: `${frontend}`,
       // };
-      const payload = JSON.stringify({
-        title: data.title || "Push title",
-        body: data.body || "Additional text with some description",
-        icon:
-          data.icon ||
-          "https://andreinwald.github.io/webpush-ios-example/images/favicon.png",
-        image:
-          data.image ||
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Orange_tabby_cat_sitting_on_fallen_leaves-Hisashi-01A.jpg/1920px-Orange_tabby_cat_sitting_on_fallen_leaves-Hisashi-01A.jpg",
-        data: data.data || {
-          url: "https://andreinwald.github.io/webpush-ios-example/?page=success",
-          link: "https://andreinwald.github.io/webpush-ios-example/?page=success",
-          message_id: "your_internal_unique_message_id_for_tracking",
-        },
-      });
-      console.log({ payload });
-      webpush
-        .sendNotification(subscription, payload)
-        .then(() =>
-          res.status(200).json({
-            success: true,
-            message: "Notification sent successfully",
-          })
-        )
-        .catch((error) => {
-          console.error("Error sending notification", error);
-          res
-            .status(500)
-            .json({ success: false, message: "Notification failed" });
-        });
+      // console.log({ payload });
       // if (updatedUser) {
-      //   webpush
-      //     .sendNotification(subscription, payload)
-      //     .then(() =>
-      //       res
-      //         .status(200)
-      //         .json({
-      //           success: true,
-      //           message: "Notification sent successfully",
-      //         })
-      //     )
-      //     .catch((error) => {
-      //       console.error("Error sending notification", error);
-      //       res
-      //         .status(500)
-      //         .json({ success: false, message: "Notification failed" });
-      //     });
+      //   push.send(subscription, payload, (err, result) => {
+      //     if (err) {
+      //       console.log({ pushError: err });
+      //     } else {
+      //       console.log({ pushResponse: result });
+      //     }
+      //   });
       // }
       //==========={End: For testing only }=========================
       res
@@ -471,26 +382,13 @@ const subscribeUser1 = async (req, res) => {
       };
       console.log({ payload });
       if (updatedUser) {
-        // push.send(subscription, payload, (err, result) => {
-        //   if (err) {
-        //     console.log({ pushError: err });
-        //   } else {
-        //     console.log({ pushResponse: result });
-        //   }
-        // });
-        // Send the notification
-        webpush
-          .sendNotification(subscription, payload)
-          .then(() =>
-            console.log({
-              success: true,
-              message: "Notification sent successfully",
-            })
-          )
-          .catch((error) => {
-            console.error("Error sending notification", error);
-            console.log({ success: false, message: "Notification failed" });
-          });
+        push.send(subscription, payload, (err, result) => {
+          if (err) {
+            console.log({ pushError: err });
+          } else {
+            console.log({ pushResponse: result });
+          }
+        });
       }
       console.log({ message: "User subscribed to push notifications" });
       res
@@ -500,49 +398,6 @@ const subscribeUser1 = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
-
-const subscribeUser2 = async (req, res) => {
-  const { userId, subscription } = req.body;
-
-  console.log({ content: req.body });
-
-  // Find the user by ID
-  const user = await User.findById(userId);
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
-  console.log({ user: user?._id });
-  console.log({ subscription });
-
-  const payload = JSON.stringify({
-    title: "Push title",
-    body: "Additional text with some description",
-    icon: "https://andreinwald.github.io/webpush-ios-example/images/favicon.png",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Orange_tabby_cat_sitting_on_fallen_leaves-Hisashi-01A.jpg/1920px-Orange_tabby_cat_sitting_on_fallen_leaves-Hisashi-01A.jpg",
-    data: {
-      url: "https://andreinwald.github.io/webpush-ios-example/?page=success",
-      link: "https://andreinwald.github.io/webpush-ios-example/?page=success",
-      message_id: "your_internal_unique_message_id_for_tracking",
-    },
-  });
-
-  console.log({ payload });
-
-  // Send the notification
-  webpush
-    .sendNotification(subscription, payload)
-    .then(() =>
-      res
-        .status(200)
-        .json({ success: true, message: "Notification sent successfully" })
-    )
-    .catch((error) => {
-      console.error("Error sending notification", error);
-      res.status(500).json({ success: false, message: "Notification failed" });
-    });
 };
 
 // Subscribe user to push notifications
@@ -574,30 +429,17 @@ const subscribeUserOriginal = async (req, res) => {
         title: "Notification from 1xBet",
         body: "Thank you for subscribing",
         // icon: "https://firebase.google.com/images/social.png",
-        url: `${frontend}`,
+        link: `${frontend}`,
       };
       console.log({ payload });
       if (updatedUser) {
-        // push.send(subscription, payload, (err, result) => {
-        //   if (err) {
-        //     console.log({ pushError: err });
-        //   } else {
-        //     console.log({ pushResponse: result });
-        //   }
-        // });
-        // Send the notification
-        webpush
-          .sendNotification(subscription, payload)
-          .then(() =>
-            console.log({
-              success: true,
-              message: "Notification sent successfully",
-            })
-          )
-          .catch((error) => {
-            console.error("Error sending notification", error);
-            console.log({ success: false, message: "Notification failed" });
-          });
+        push.send(subscription, payload, (err, result) => {
+          if (err) {
+            console.log({ pushError: err });
+          } else {
+            console.log({ pushResponse: result });
+          }
+        });
       }
       console.log({ message: "User subscribed to push notifications" });
       res
@@ -609,71 +451,44 @@ const subscribeUserOriginal = async (req, res) => {
   }
 };
 
-const subscribeUser = async (req, res) => {
-  const { userId, subscription } = req.body;
+const subscribeUserTest = async (req, res) => {
+  try {
+    const { userId, subscription } = req.body;
 
-  console.log({ content: req.body });
+    console.log({ content: req.body });
 
-  // Find the user by ID
-  const user = await User.findById(userId);
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-  // add new user subscription
-  user.pushSubscription = subscription;
-  const updatedUser = await user.save();
-
-  const payload = JSON.stringify({
-    title: "Notification from 1xBet",
-    body: "Thank you for subscribing",
-    // icon: "https://firebase.google.com/images/social.png",
-    data: {
-      url: `${frontend}`,
-      link: `${frontend}`,
-      // message_id: "your_internal_unique_message_id_for_tracking",
-    },
-  });
-  console.log({ payload });
-  if (updatedUser) {
-    // Send the notification
-    webpush
-      .sendNotification(subscription, payload)
-      .then(() =>
-        res
-          .status(200)
-          .json({ success: true, message: "Notification sent successfully" })
-      )
-      .catch((error) => {
-        console.error("Error sending notification", error);
-        res
-          .status(500)
-          .json({ success: false, message: "Notification failed" });
-      });
-  } else {
     // add new user subscription
     user.pushSubscription = subscription;
     const updatedUser = await user.save();
+
+    const payload = {
+      title: "Notification from 1xBet",
+      body: "Thank you for subscribing",
+      // icon: "https://firebase.google.com/images/social.png",
+      link: `${frontend}`,
+    };
+    console.log({ payload });
     if (updatedUser) {
-      // Send the notification
-      webpush
-        .sendNotification(subscription, payload)
-        .then(() =>
-          res
-            .status(200)
-            .json({ success: true, message: "Notification sent successfully" })
-        )
-        .catch((error) => {
-          console.error("Error sending notification", error);
-          res
-            .status(500)
-            .json({ success: false, message: "Notification failed" });
-        });
+      push.send(subscription, payload, (err, result) => {
+        if (err) {
+          console.log({ pushError: err });
+        } else {
+          console.log({ pushResponse: result });
+        }
+      });
     }
+    console.log({ message: "User subscribed to push notifications" });
+    res.status(200).json({ message: "User subscribed to push notifications" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
-
-
 
 /**
  * Example response
@@ -772,26 +587,13 @@ const broadcast = async (req, res) => {
         if (user.pushSubscription && user.pushSubscription.endpoint) {
           const subscription = user.pushSubscription;
 
-          // push.send(subscription, payload, (err, result) => {
-          //   if (err) {
-          //     console.log({ pushError: err });
-          //   } else {
-          //     console.log({ pushResponse: result });
-          //   }
-          // });
-          // Send the notification
-          webpush
-            .sendNotification(subscription, payload)
-            .then(() =>
-              console.log({
-                success: true,
-                message: "Notification sent successfully",
-              })
-            )
-            .catch((error) => {
-              console.error("Error sending notification", error);
-              console.log({ success: false, message: "Notification failed" });
-            });
+          push.send(subscription, payload, (err, result) => {
+            if (err) {
+              console.log({ pushError: err });
+            } else {
+              console.log({ pushResponse: result });
+            }
+          });
         }
       });
 
