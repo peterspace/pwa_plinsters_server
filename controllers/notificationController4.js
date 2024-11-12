@@ -639,12 +639,11 @@ const subscribeUser = async (req, res) => {
     // Send the notification
     webpush
       .sendNotification(subscription, payload)
-      .then(() => {
-        console.log("Notification sent");
+      .then(() =>
         res
           .status(200)
-          .json({ success: true, message: "Notification sent successfully" });
-      })
+          .json({ success: true, message: "Notification sent successfully" })
+      )
       .catch((error) => {
         console.error("Error sending notification", error);
         res
@@ -659,12 +658,11 @@ const subscribeUser = async (req, res) => {
       // Send the notification
       webpush
         .sendNotification(subscription, payload)
-        .then(() => {
-          console.log("Notification sent");
+        .then(() =>
           res
             .status(200)
-            .json({ success: true, message: "Notification sent successfully" });
-        })
+            .json({ success: true, message: "Notification sent successfully" })
+        )
         .catch((error) => {
           console.error("Error sending notification", error);
           res
@@ -674,6 +672,8 @@ const subscribeUser = async (req, res) => {
     }
   }
 };
+
+
 
 /**
  * Example response

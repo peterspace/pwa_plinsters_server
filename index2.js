@@ -1,5 +1,6 @@
 const dotenv = require("dotenv").config();
 const https = require("https"); // new
+const path = require("path");
 const crypto = require("crypto");
 const express = require("express");
 const mongoose = require("mongoose");
@@ -11,10 +12,6 @@ const axios = require("axios");
 var geoip = require("geoip-country");
 
 const { errorHandler } = require("./middleware/errorMiddleware.js");
-const cookieParser = require("cookie-parser");
-const path = require("path");
-//==========={using clodinary}===================
-const { uploadImage } = require("./utils/uploadImage.js");
 const { getCountryCode } = require("./countryCodes.js");
 const { createPurchaseEvent } = require("./controllers/purchaseControllers.js");
 const { createLeadEvent } = require("./controllers/leadControllers.js");
@@ -24,10 +21,9 @@ const purchaseRoutes = require("./routes/purchase.js");
 const notificationRoutes = require("./routes/notification.js");
 
 const userRoutes = require("./routes/user.js");
-const pwaRoutes = require("./routes/pwa.js");
 const { rateLimit } = require("express-rate-limit");
 // cron job for periodic notification
-require("./jobs/scheduleNotifications");
+require("./jobs/scheduleNotifications.js");
 
 const PORT = process.env.PORT || 5000;
 const keitaro_first_campaign = process.env.KEITARO_FIRST_CAMPAIGN; // for selecting country
@@ -106,8 +102,6 @@ app.use("/lead", leadRoutes);
 app.use("/purchase", purchaseRoutes);
 app.use("/user", userRoutes);
 app.use("/notifications", notificationRoutes);
-
-app.use("/pwa", pwaRoutes);
 
 //active
 //suspended
@@ -217,8 +211,6 @@ async function fetchCountryCode() {
 }
 
 // fetchCountryCode()
-
-//==================={Main Routes}========================================================
 
 app.get("/", (req, res) => {
   const ip = req.clientIp;
