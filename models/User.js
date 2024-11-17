@@ -24,12 +24,15 @@ const userSchema = new mongoose.Schema(
     // pushSubscription: {
     //   subscription: String,
     // },
+    // pushSubscription: {
+    //   endpoint: String,
+    //   keys: {
+    //     p256dh: String,
+    //     auth: String,
+    //   },
+    // },
     pushSubscription: {
-      endpoint: String,
-      keys: {
-        p256dh: String,
-        auth: String,
-      },
+      type: mongoose.Schema.Types.Mixed,
     },
     lastLogin: {
       type: Date,

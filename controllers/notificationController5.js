@@ -619,6 +619,7 @@ const subscribeUser = async (req, res) => {
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
+
   // add new user subscription
   user.pushSubscription = subscription;
   const updatedUser = await user.save();
@@ -636,18 +637,40 @@ const subscribeUser = async (req, res) => {
   console.log({ payload });
   if (updatedUser) {
     // Send the notification
-    res
-      .status(200)
-      .json({ success: true, message: "Notification sent successfully" });
+    webpush
+      .sendNotification(subscription, payload)
+      .then(() => {
+        console.log("Notification sent");
+        res
+          .status(200)
+          .json({ success: true, message: "Notification sent successfully" });
+      })
+      .catch((error) => {
+        console.error("Error sending notification", error);
+        res
+          .status(500)
+          .json({ success: false, message: "Notification failed" });
+      });
   } else {
     // add new user subscription
     user.pushSubscription = subscription;
     const updatedUser = await user.save();
     if (updatedUser) {
       // Send the notification
-      res
-        .status(200)
-        .json({ success: true, message: "Notification sent successfully" });
+      webpush
+        .sendNotification(subscription, payload)
+        .then(() => {
+          console.log("Notification sent");
+          res
+            .status(200)
+            .json({ success: true, message: "Notification sent successfully" });
+        })
+        .catch((error) => {
+          console.error("Error sending notification", error);
+          res
+            .status(500)
+            .json({ success: false, message: "Notification failed" });
+        });
     }
   }
 };
