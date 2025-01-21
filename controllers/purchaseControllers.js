@@ -5,6 +5,8 @@ const crypto = require("crypto");
 const dotenv = require("dotenv").config();
 const pixelId = process.env.FACEBOOK_PIXEL_ID; // Replace with your Pixel ID
 const accessToken = process.env.FACEBOOK_PIXEL_ACCESS_TOKEN; // Replace with your Access Token
+const one_signal_api_key = process.env.ONE_SIGNAL_API_KEY;
+const one_signal_app_id = process.env.ONE_SIGNAL_APP_ID;
 
 function hashData(data) {
   if (!data) return null;
@@ -13,7 +15,6 @@ function hashData(data) {
     .update(data.trim().toLowerCase())
     .digest("hex");
 }
-
 
 const testData = {
   fbclid: "37cionlfj9cd",
@@ -61,13 +62,13 @@ const createPurchaseEvent = async (req, res) => {
       sub_id_28,
     } = req.query;
 
-    console.log({purchaseInfo: req.query})
+    console.log({ purchaseInfo: req.query });
 
     const user = await getUserByIPAddress(ip);
     if (user) {
       const newPurchaseEvent = new Purchase({
         eventType: "Purchase",
-        userId: sub_id_28 ? sub_id_28 : user._id,// user_id from keitaro since may users could be using the same IP address for example using a home/office wifi
+        userId: sub_id_28 ? sub_id_28 : user._id, // user_id from keitaro since may users could be using the same IP address for example using a home/office wifi
         fbclid, // profile.id,
         external_id, // profile.id,
         campaign_name,
@@ -82,7 +83,12 @@ const createPurchaseEvent = async (req, res) => {
       const purchaseData = await newPurchaseEvent.save();
       if (purchaseData) {
         console.log({ purchaseData });
-        await facebookPixelPurchaseEvent(req);
+        const playerId = user?.pushSubscription?.playerId;
+        // send purchase notification
+
+        if (playerId) {
+          await sendPurchaseNotification(playerId);
+        }
       }
     }
   } catch (error) {
@@ -99,10 +105,9 @@ const getPurchaseEvents = async (req, res) => {
   }
 };
 
-async function checkLeadsEvent(){
+async function checkLeadsEvent() {
   const events = await Lead.find();
   console.log(events);
-
 }
 // checkLeadsEvent()
 
@@ -317,6 +322,66 @@ async function facebookPixelPurchaseEvent(req) {
     }
   }
 }
+
+//====================================================={Purchase}====================================================================
+//====================================================={Purchase to User}====================================================================
+//Good
+const sendPurchaseNotification = async (playerId) => {
+  const headings = {
+    ar: "شراء ناجح", // Arabic
+    "zh-Hans": "购买成功", // Chinese
+    nl: "Aankoop geslaagd", // Dutch
+    en: "Purchase Successful", // English
+    fr: "Achat réussi", // French
+    id: "Pembelian berhasil", // Indonesian
+    fa: "خرید موفقیت‌آمیز", // Urdu
+    ko: "구매 성공", // Korean
+    ru: "Покупка успешна", // Russian
+    tr: "Satın Alma Başarılı", // Turkish
+    ms: "Pembelian Berjaya", // Malay
+  };
+
+  const contents = {
+    ar: "مبروك! لقد قمت بأول إيداع لك. الآن دعنا نبدأ المرح!", // Arabic
+    "zh-Hans": "恭喜！您已完成首次存款。现在让我们开始吧！", // Chinese
+    nl: "Gefeliciteerd! Je hebt je eerste storting gedaan. Laat het plezier beginnen!", // Dutch
+    en: "Congratulations! You have made your first deposit. Now let the fun begin!", // English
+    fr: "Félicitations! Vous avez effectué votre premier dépôt. Maintenant, que le plaisir commence!", // French
+    id: "Selamat! Anda telah melakukan deposit pertama Anda. Sekarang mari kita mulai bersenang-senang!", // Indonesian
+    fa: "تبریک! شما اولین واریز خود را انجام داده‌اید. حالا بگذارید سرگرمی شروع شود!", // Urdu
+    ko: "축하합니다! 첫 입금을 완료했습니다. 이제 재미가 시작됩니다!", // Korean
+    ru: "Поздравляем! Вы сделали свой первый депозит. Теперь начинается веселье!", // Russian
+    tr: "Tebrikler! İlk deponuzu yaptınız. Şimdi eğlence başlasın!", // Turkish
+    ms: "Tahniah! Anda telah membuat deposit pertama anda. Sekarang mari kita mulakan keseronokan!", // Malay
+  };
+
+  const data = {
+    target_channel: "push",
+    app_id: one_signal_app_id,
+    include_player_ids: [playerId], // Sending the notification to the specific user using their player_id
+    headings,
+    contents,
+  };
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${one_signal_api_key}`, // Replace with your actual OneSignal API Key
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.onesignal.com/notifications",
+      data,
+      { headers }
+    );
+
+    if (response?.data) {
+      console.log("Notification sent successfully:", response.data);
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+  }
+};
 
 module.exports = {
   createPurchaseEvent,

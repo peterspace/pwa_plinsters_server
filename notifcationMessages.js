@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const one_signal_api_key ="os_v2_app_z7spz3q4avemxginhgnidbwythl7fbfhleqekjeb3z63z7zlpbidv5mwmdlqf2vv6a7ijol5sxbanfe777ke4wnhzcxx7fx4lzzrnii"
+const one_signal_api_key = process.env.ONE_SIGNAL_API_KEY;
 const one_signal_app_id = process.env.ONE_SIGNAL_APP_ID;
 
 const sendNotification = async () => {
@@ -18,7 +18,7 @@ const sendNotification = async () => {
 
   const headers = {
     "Content-Type": "application/json",
-    Authorization: "Basic MjAyYzJlOTAtMTY4Mi00ODFlLTg2MDYtZTM2YzllM2ZlZTVi", // Replace with your actual OneSignal API key
+    Authorization: `Basic ${one_signal_api_key}`, // Replace with your actual OneSignal API key
   };
 
   try {
@@ -85,6 +85,7 @@ const sendNotification1 = async () => {
   const data = {
     target_channel: "push",
     included_segments: ["Subscribed Users"], // all users or selected users
+
     app_id: one_signal_app_id,
     headings,
     contents,
@@ -106,3 +107,16 @@ const sendNotification1 = async () => {
     console.error("Error sending notification:", error);
   }
 };
+
+/**
+ *headings: { en: "English Title" },
+  contents: { en: "English Message" },
+ */
+
+//============={all users}===============
+// included_segments: ["All"],
+//============={subscribed users}===============
+// included_segments: ["Subscribed Users"], // all users or selected users
+//============={specific users only}===============
+// included_segments: ["include_player_ids"],
+// include_player_ids: req.body.devices,

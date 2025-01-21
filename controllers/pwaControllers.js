@@ -1,559 +1,16 @@
 const Pwa = require("../models/Pwa");
 
-const defaultAppId = process.env.DEFAULT_APP_ID;
-
-const createPwa1 = async (req, res) => {
-  try {
-    const {
-      adminId,
-      language,
-      languages,
-      defaultLanguage,
-      headerReviews,
-      hundredPlus,
-      aboutThisGame,
-      about1,
-      about2,
-      about3,
-      updatedDate,
-      casino,
-      reviewObject,
-      icon,
-      logo,
-      appTitle,
-      appSubTitle,
-      screenShotsObject,
-      domain,
-      subDomain,
-    } = req.body;
-
-    const userData = {
-      isExist: true,
-      headerReviews,
-      hundredPlus,
-      aboutThisGame,
-      about1,
-      about2,
-      about3,
-      updatedDate,
-      casino,
-      reviewObject,
-      icon,
-      logo,
-      appTitle,
-      appSubTitle,
-      screenShotsObject,
-    };
-
-    let newPwa = {};
-    if (language === "Arabic") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        arabic: userData,
-      });
-    }
-
-    if (language === "Chinese") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        chinese: userData,
-      });
-    }
-    if (language === "Dutch") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        dutch: userData,
-      });
-    }
-    if (language === "English") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        english: userData,
-      });
-    }
-    if (language === "French") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        french: userData,
-      });
-    }
-    if (language === "Indonesian") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        indonesian: userData,
-      });
-    }
-    if (language === "Urdu") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        urdu: userData,
-      });
-    }
-    if (language === "Korean") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        korean: userData,
-      });
-    }
-    if (language === "Russian") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        russian: userData,
-      });
-    }
-    if (language === "Turkish") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        turkish: userData,
-      });
-    }
-    if (language === "Malay") {
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        malay: userData,
-      });
-    }
-
-    const updatedResponse = await newPwa.save();
-    if (updatedResponse) {
-      res.status(200).json(updatedResponse);
-    }
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-async function testDefaultApp() {
-  const defaultApp = await Pwa.findById(defaultAppId);
-
-  if (defaultApp) {
-    console.log({ appEnglish: defaultApp?.english });
-  }
-}
-// testDefaultApp()
 const createPwa = async (req, res) => {
   try {
-    const {
-      adminId,
-      language,
-      languages,
-      defaultLanguage,
-      headerReviews,
-      hundredPlus,
-      aboutThisGame,
-      about1,
-      about2,
-      about3,
-      updatedDate,
-      casino,
-      reviewObject,
-      icon,
-      logo,
-      appTitle,
-      appSubTitle,
-      screenShotsObject,
-      domain,
-      subDomain,
-    } = req.body;
+    const { adminId } = req.body;
 
-    const defaultApp = await Pwa.findById(defaultAppId);
-
-    if (!defaultAppId) {
-      console.log("service temporarily not available");
-      return;
-    }
-
-    if (!adminId || !language || !defaultLanguage) {
+    if (!adminId) {
       console.log("one or more input required");
       return;
     }
-
-    let newPwa = {};
-    if (language === "Arabic") {
-      const defaultValues = defaultApp.arabic;
-
-      const userDataArabic = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        arabic: userDataArabic,
-      });
-    }
-
-    if (language === "Chinese") {
-      const defaultValues = defaultApp.chinese;
-
-      const userDataChinese = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        chinese: userDataChinese,
-      });
-    }
-    if (language === "Dutch") {
-      const defaultValues = defaultApp.dutch;
-
-      const userDataDutch = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        dutch: userDataDutch,
-      });
-    }
-    if (language === "English") {
-      const defaultValues = defaultApp.english;
-
-      const userDataEnglish = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        english: userDataEnglish,
-      });
-    }
-    if (language === "French") {
-      const defaultValues = defaultApp.french;
-      const userDataFrench = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        french: userDataFrench,
-      });
-    }
-    if (language === "Indonesian") {
-      const defaultValues = defaultApp.indonesian;
-      const userDataIndonesian = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        indonesian: userDataIndonesian,
-      });
-    }
-    if (language === "Urdu") {
-      const defaultValues = defaultApp.urdu;
-      const userDataUrdu = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        urdu: userDataUrdu,
-      });
-    }
-    if (language === "Korean") {
-      const defaultValues = defaultApp.korean;
-      const userDataKorean = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        korean: userDataKorean,
-      });
-    }
-    if (language === "Russian") {
-      const defaultValues = defaultApp.russian;
-      const userDataRussian = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        russian: userDataRussian,
-      });
-    }
-    if (language === "Turkish") {
-      const defaultValues = defaultApp.turkish;
-
-      const userDataTurkish = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        turkish: userDataTurkish,
-      });
-    }
-    if (language === "Malay") {
-      const defaultValues = defaultApp.malay;
-
-      const userDataMalay = {
-        isExist: true,
-        headerReviews: headerReviews || defaultValues.headerReviews,
-        hundredPlus: hundredPlus || defaultValues.hundredPlus,
-        aboutThisGame: aboutThisGame || defaultValues.aboutThisGame,
-        about1: about1 || defaultValues.about1,
-        about2: about2 || defaultValues.about2,
-        about3: about3 || defaultValues.about3,
-        updatedDate: updatedDate || defaultValues.updatedDate,
-        casino: casino || defaultValues.casino,
-        reviewObject: reviewObject || defaultValues.reviewObject,
-        icon: icon || defaultValues.icon,
-        logo: logo || defaultValues.logo,
-        appTitle: appTitle || defaultValues.appTitle,
-        appSubTitle: appSubTitle || defaultValues.appSubTitle,
-        screenShotsObject: screenShotsObject || defaultValues.screenShotsObject,
-      };
-      newPwa = new Pwa({
-        adminId,
-        domain,
-        subDomain,
-        language,
-        languages,
-        defaultLanguage,
-        malay: userDataMalay,
-      });
-    }
+    const newPwa = new Pwa({
+      adminId,
+    });
 
     const updatedResponse = await newPwa.save();
     if (updatedResponse) {
@@ -574,60 +31,6 @@ const getAllPwa = async (req, res) => {
 };
 
 // For apps
-const getPwaByIdAndLanguage = async (req, res) => {
-  console.log("fetching Data by id and language");
-
-  console.log({ params: req.params });
-  try {
-    const { appId, language } = req.params;
-    const pwa = await Pwa.findById(appId);
-    if (!pwa) {
-      return res.status(404).json({ message: "Pwa event not found" });
-    }
-
-    let response = {};
-    if (language === "Arabic") {
-      response = pwa.arabic;
-    }
-
-    if (language === "Chinese") {
-      response = pwa.chinese;
-    }
-    if (language === "Dutch") {
-      response = pwa.dutch;
-    }
-    if (language === "English") {
-      response = pwa.english;
-    }
-    if (language === "French") {
-      response = pwa.french;
-    }
-    if (language === "Indonesian") {
-      response = pwa.indonesian;
-    }
-    if (language === "Urdu") {
-      response = pwa.urdu;
-    }
-    if (language === "Korean") {
-      response = pwa.korean;
-    }
-    if (language === "Russian") {
-      response = pwa.russian;
-    }
-    if (language === "Turkish") {
-      response = pwa.turkish;
-    }
-    if (language === "Urdu") {
-      response = pwa.urdu;
-    }
-
-    // console.log({response});
-    res.status(200).json(response);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
 const getPwaById = async (req, res) => {
   try {
     const { appId } = req.params;
@@ -641,265 +44,1919 @@ const getPwaById = async (req, res) => {
   }
 };
 
-const updatePwa = async (req, res) => {
+const getPwaByIdAndLanguage = async (req, res) => {
+  // const { appId, language, country } = req.body;
+  console.log("fetching Data by id and language");
+
+  console.log({ params: req.params });
+  const { appId, language, country } = req.params;
+
+  if (!country || !language || !appId) {
+    return res.status(404).json({ message: "missing data" });
+  }
+
+  const pwa = await Pwa.findById(appId);
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa event not found" });
+  }
+  const _id = pwa._id || "";
+  const domain = pwa.domain || "";
+  const subDomain = pwa.subDomain || "";
+  const languages = pwa.languages || "";
+  const defaultLanguage = pwa.defaultLanguage || "";
+  const pixelId = pwa.pixelId || "";
+  const accessToken = pwa.accessToken || "";
+  const domainApp = pwa.domainApp || "";
+  const domainLanding = pwa.domainLanding || "";
+  const keitaroDomain = pwa.keitaroDomain || "";
+  const keitaroFirstCampaign = pwa.keitaroFirstCampaign || "";
+  const keitaroSecondCampaign = pwa.keitaroSecondCampaign || "";
+  const oneSignalApiKey = pwa.oneSignalApiKey || "";
+  const oneSignalAppId = pwa.oneSignalAppId || "";
+  const marketerTag = pwa.marketerTag || "";
+  const icon = pwa.icon || "";
+  const logo = pwa.logo || "";
+  const appTitle = pwa.appTitle || "";
+  const appSubTitle = pwa.appSubTitle || "";
+  const backgroundPhotoMobile = pwa.backgroundPhotoMobile || "";
+  const backgroundPhotoDesktop = pwa.backgroundPhotoDesktop || "";
+
+  let pwaObject = {};
+  let response = {};
+
+  console.log({ countryFormated: country.toLowerCase() });
+
   try {
-    const {
-      appId,
-      adminId,
-      language,
-      languages,
-      defaultLanguage,
-      headerReviews,
-      hundredPlus,
-      aboutThisGame,
-      about1,
-      about2,
-      about3,
-      updatedDate,
-      casino,
-      reviewObject,
-      icon,
-      logo,
-      appTitle,
-      appSubTitle,
-      screenShotsObject,
-      domain,
-      subDomain,
-    } = req.body;
+    switch (country.toLowerCase()) {
+      case "egypt":
+        pwaObject = pwa.egypt;
+        if (language === "Arabic") {
+          response = pwaObject.arabic;
+        }
 
-    if (!appId) {
-      console.log("appId required");
-      return;
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+
+      case "iraq":
+        pwaObject = pwa.iraq;
+        if (language === "Arabic") {
+          response = pwaObject.arabic;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "saudi arabia":
+        pwaObject = pwa.saudiArabia;
+        if (language === "Arabic") {
+          response = pwaObject.arabic;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "germany":
+        pwaObject = pwa.germany;
+
+        if (language === "Dutch") {
+          response = pwaObject.dutch;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "netherlands":
+        pwaObject = pwa.netherlands;
+        if (language === "Dutch") {
+          response = pwaObject.dutch;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "hong kong":
+        pwaObject = pwa.hongKong;
+
+        if (language === "Chinese") {
+          response = pwaObject.chinese;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "china":
+        pwaObject = pwa.china;
+        if (language === "Chinese") {
+          response = pwaObject.chinese;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "indonesia":
+        pwaObject = pwa.indonesia;
+
+        if (language === "Indonesian") {
+          response = pwaObject.indonesian;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "malaysia":
+        pwaObject = pwa.malaysia;
+        if (language === "Malay") {
+          response = pwaObject.malay;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "singapore":
+        pwaObject = pwa.singapore;
+        if (language === "Malay") {
+          response = pwaObject.malay;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "united kingdom":
+        pwaObject = pwa.unitedKingdom;
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "pakistan":
+        pwaObject = pwa.pakistan;
+        if (language === "Urdu") {
+          response = pwaObject.urdu;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "russia":
+        pwaObject = pwa.russia;
+
+        if (language === "Russian") {
+          response = pwaObject.russian;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "senegal":
+        pwaObject = pwa.senegal;
+        if (language === "French") {
+          response = pwaObject.french;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "south korea":
+        pwaObject = pwa.southKorea;
+        if (language === "Korean") {
+          response = pwaObject.korean;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "turkey":
+        pwaObject = pwa.turkey;
+        if (language === "Turkish") {
+          response = pwaObject.turkish;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      case "lithuania":
+        pwaObject = pwa.lithuania;
+
+        if (language === "Lithuanian") {
+          response = pwaObject.lithuanian;
+        }
+
+        if (language === "English") {
+          response = pwaObject.english;
+        }
+
+        break;
+      default:
+        Console.log("not supported");
+        break;
     }
-    if (!adminId) {
-      console.log("adminId required");
-      return;
+
+    if (response) {
+      response = {
+        ...response,
+        _id,
+        domain,
+        subDomain,
+        languages,
+        defaultLanguage,
+        pixelId,
+        accessToken,
+        domainApp,
+        domainLanding,
+        keitaroDomain,
+        keitaroFirstCampaign,
+        keitaroSecondCampaign,
+        oneSignalApiKey,
+        oneSignalAppId,
+        marketerTag,
+        icon,
+        logo,
+        appTitle,
+        appSubTitle,
+        backgroundPhotoMobile,
+        backgroundPhotoDesktop,
+      };
+      res.status(200).json(response);
+    } else {
+      res.status(404);
+      throw new Error("App not found");
     }
-    if (!language) {
-      console.log("language required");
-      return;
+  } catch (error) {
+    console.log("general error");
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const updatePwa = async (req, res) => {
+  console.log("updating PWA");
+  const {
+    appId,
+    adminId,
+    language,
+    languages,
+    defaultLanguage,
+    headerReviews,
+    hundredPlus,
+    aboutThisGame,
+    about,
+    updatedDate,
+    casino,
+    reviewObject,
+    icon,
+    logo,
+    appTitle,
+    appSubTitle,
+    screenShots,
+    domain,
+    subDomain,
+    pixelId,
+    accessToken,
+    domainApp,
+    domainLanding,
+    keitaroDomain,
+    keitaroFirstCampaign,
+    keitaroSecondCampaign,
+    country,
+    marketerTag,
+    backgroundPhotoMobile,
+    backgroundPhotoDesktop,
+  } = req.body;
+
+  console.log({
+    appData: { appId, adminId, language, screenShots },
+  });
+
+  let pwaObject = {};
+  // if (!appId) {
+  //   console.log("appId required");
+  //   return res.status(404).json({ message: "appId required" });
+  // }
+  // if (!adminId) {
+  //   console.log("adminId required");
+  //   return res.status(404).json({ message: "adminId required" });
+  // }
+  // if (!language) {
+  //   console.log("language required");
+  //   return res.status(404).json({ message: "language required" });
+  // }
+
+  if (!country || !appId || !adminId) {
+    return res.status(404).json({ message: "missing data" });
+  }
+
+  const pwa = await Pwa.findOne({ _id: appId, adminId });
+
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
+
+  try {
+    let updatedPWA = {};
+    pwa.domain = domain || pwa.domain;
+    pwa.subDomain = subDomain || pwa.subDomain;
+    pwa.languages = languages || pwa.languages;
+    pwa.defaultLanguage = defaultLanguage || pwa.defaultLanguage;
+    pwa.pixelId = pixelId || pwa.pixelId;
+    pwa.accessToken = accessToken || pwa.accessToken;
+    pwa.domainApp = domainApp || pwa.domainApp;
+    pwa.domainLanding = domainLanding || pwa.domainLanding;
+    pwa.keitaroDomain = keitaroDomain || pwa.keitaroDomain;
+    pwa.keitaroFirstCampaign = keitaroFirstCampaign || pwa.keitaroFirstCampaign;
+    pwa.keitaroSecondCampaign =
+      keitaroSecondCampaign || pwa.keitaroSecondCampaign;
+    pwa.marketerTag = marketerTag || pwa.marketerTag;
+    pwa.icon = icon || pwa.icon;
+    pwa.logo = logo || pwa.logo;
+    pwa.appTitle = appTitle || pwa.appTitle;
+    pwa.appSubTitle = appSubTitle || pwa.appSubTitle;
+    pwa.backgroundPhotoMobile =
+      backgroundPhotoMobile || pwa.backgroundPhotoMobile;
+    pwa.backgroundPhotoDesktop =
+      backgroundPhotoDesktop || pwa.backgroundPhotoDesktop;
+
+    switch (country) {
+      case "egypt":
+        pwaObject = pwa.egypt;
+        if (language === "Arabic") {
+          pwaObject.arabic.headerReviews =
+            headerReviews || pwaObject.arabic.headerReviews;
+          pwaObject.arabic.hundredPlus =
+            hundredPlus || pwaObject.arabic.hundredPlus;
+          pwaObject.arabic.aboutThisGame =
+            aboutThisGame || pwaObject.arabic.aboutThisGame;
+          pwaObject.arabic.about = about || pwaObject.arabic.about;
+          pwaObject.arabic.updatedDate =
+            updatedDate || pwaObject.arabic.updatedDate;
+          pwaObject.arabic.casino = casino || pwaObject.arabic.casino;
+          pwaObject.arabic.reviewObject =
+            reviewObject || pwaObject.arabic.reviewObject;
+          pwaObject.arabic.screenShots =
+            screenShots || pwaObject.arabic.screenShots;
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+
+      case "iraq":
+        pwaObject = pwa.iraq;
+        if (language === "Arabic") {
+          pwaObject.arabic.headerReviews =
+            headerReviews || pwaObject.arabic.headerReviews;
+          pwaObject.arabic.hundredPlus =
+            hundredPlus || pwaObject.arabic.hundredPlus;
+          pwaObject.arabic.aboutThisGame =
+            aboutThisGame || pwaObject.arabic.aboutThisGame;
+          pwaObject.arabic.about = about || pwaObject.arabic.about;
+          pwaObject.arabic.updatedDate =
+            updatedDate || pwaObject.arabic.updatedDate;
+          pwaObject.arabic.casino = casino || pwaObject.arabic.casino;
+          pwaObject.arabic.reviewObject =
+            reviewObject || pwaObject.arabic.reviewObject;
+          pwaObject.arabic.screenShots =
+            screenShots || pwaObject.arabic.screenShots;
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.icon = icon || pwaObject.english.icon;
+          pwaObject.english.logo = logo || pwaObject.english.logo;
+          pwaObject.english.appTitle = appTitle || pwaObject.english.appTitle;
+          pwaObject.english.appSubTitle =
+            appSubTitle || pwaObject.english.appSubTitle;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "saudi arabia":
+        pwaObject = pwa.saudiArabia;
+        if (language === "Arabic") {
+          pwaObject.arabic.headerReviews =
+            headerReviews || pwaObject.arabic.headerReviews;
+          pwaObject.arabic.hundredPlus =
+            hundredPlus || pwaObject.arabic.hundredPlus;
+          pwaObject.arabic.aboutThisGame =
+            aboutThisGame || pwaObject.arabic.aboutThisGame;
+          pwaObject.arabic.about = about || pwaObject.arabic.about;
+          pwaObject.arabic.updatedDate =
+            updatedDate || pwaObject.arabic.updatedDate;
+          pwaObject.arabic.casino = casino || pwaObject.arabic.casino;
+          pwaObject.arabic.reviewObject =
+            reviewObject || pwaObject.arabic.reviewObject;
+          pwaObject.arabic.screenShots =
+            screenShots || pwaObject.arabic.screenShots;
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "germany":
+        pwaObject = pwa.germany;
+        if (language === "Dutch") {
+          pwaObject.dutch.headerReviews =
+            headerReviews || pwaObject.dutch.headerReviews;
+          pwaObject.dutch.hundredPlus =
+            hundredPlus || pwaObject.dutch.hundredPlus;
+          pwaObject.dutch.aboutThisGame =
+            aboutThisGame || pwaObject.dutch.aboutThisGame;
+          pwaObject.dutch.about = about || pwaObject.dutch.about;
+          pwaObject.dutch.updatedDate =
+            updatedDate || pwaObject.dutch.updatedDate;
+          pwaObject.dutch.casino = casino || pwaObject.dutch.casino;
+          pwaObject.dutch.reviewObject =
+            reviewObject || pwaObject.dutch.reviewObject;
+          pwaObject.dutch.screenShots =
+            screenShots || pwaObject.dutch.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.icon = icon || pwaObject.english.icon;
+          pwaObject.english.logo = logo || pwaObject.english.logo;
+          pwaObject.english.appTitle = appTitle || pwaObject.english.appTitle;
+          pwaObject.english.appSubTitle =
+            appSubTitle || pwaObject.english.appSubTitle;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "netherlands":
+        pwaObject = pwa.netherlands;
+        if (language === "Dutch") {
+          pwaObject.dutch.headerReviews =
+            headerReviews || pwaObject.dutch.headerReviews;
+          pwaObject.dutch.hundredPlus =
+            hundredPlus || pwaObject.dutch.hundredPlus;
+          pwaObject.dutch.aboutThisGame =
+            aboutThisGame || pwaObject.dutch.aboutThisGame;
+          pwaObject.dutch.about = about || pwaObject.dutch.about;
+          pwaObject.dutch.updatedDate =
+            updatedDate || pwaObject.dutch.updatedDate;
+          pwaObject.dutch.casino = casino || pwaObject.dutch.casino;
+          pwaObject.dutch.reviewObject =
+            reviewObject || pwaObject.dutch.reviewObject;
+          pwaObject.dutch.screenShots =
+            screenShots || pwaObject.dutch.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "hong kong":
+        pwaObject = pwa.hongKong;
+        if (language === "Chinese") {
+          pwaObject.chinese.headerReviews =
+            headerReviews || pwaObject.chinese.headerReviews;
+          pwaObject.chinese.hundredPlus =
+            hundredPlus || pwaObject.chinese.hundredPlus;
+          pwaObject.chinese.aboutThisGame =
+            aboutThisGame || pwaObject.chinese.aboutThisGame;
+          pwaObject.chinese.about = about || pwaObject.chinese.about;
+          pwaObject.chinese.updatedDate =
+            updatedDate || pwaObject.chinese.updatedDate;
+          pwaObject.chinese.casino = casino || pwaObject.chinese.casino;
+          pwaObject.chinese.reviewObject =
+            reviewObject || pwaObject.chinese.reviewObject;
+          pwaObject.chinese.screenShots =
+            screenShots || pwaObject.chinese.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "china":
+        pwaObject = pwa.china;
+        if (language === "Chinese") {
+          pwaObject.chinese.headerReviews =
+            headerReviews || pwaObject.chinese.headerReviews;
+          pwaObject.chinese.hundredPlus =
+            hundredPlus || pwaObject.chinese.hundredPlus;
+          pwaObject.chinese.aboutThisGame =
+            aboutThisGame || pwaObject.chinese.aboutThisGame;
+          pwaObject.chinese.about = about || pwaObject.chinese.about;
+          pwaObject.chinese.updatedDate =
+            updatedDate || pwaObject.chinese.updatedDate;
+          pwaObject.chinese.casino = casino || pwaObject.chinese.casino;
+          pwaObject.chinese.reviewObject =
+            reviewObject || pwaObject.chinese.reviewObject;
+          pwaObject.chinese.screenShots =
+            screenShots || pwaObject.chinese.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "indonesia":
+        pwaObject = pwa.indonesia;
+        if (language === "Indonesian") {
+          pwaObject.indonesian.headerReviews =
+            headerReviews || pwaObject.indonesian.headerReviews;
+          pwaObject.indonesian.hundredPlus =
+            hundredPlus || pwaObject.indonesian.hundredPlus;
+          pwaObject.indonesian.aboutThisGame =
+            aboutThisGame || pwaObject.indonesian.aboutThisGame;
+          pwaObject.indonesian.about = about || pwaObject.indonesian.about;
+          pwaObject.indonesian.updatedDate =
+            updatedDate || pwaObject.indonesian.updatedDate;
+          pwaObject.indonesian.casino = casino || pwaObject.indonesian.casino;
+          pwaObject.indonesian.reviewObject =
+            reviewObject || pwaObject.indonesian.reviewObject;
+          pwaObject.indonesian.screenShots =
+            screenShots || pwaObject.indonesian.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "malaysia":
+        pwaObject = pwa.malaysia;
+        if (language === "Malay") {
+          pwaObject.malay.headerReviews =
+            headerReviews || pwaObject.malay.headerReviews;
+          pwaObject.malay.hundredPlus =
+            hundredPlus || pwaObject.malay.hundredPlus;
+          pwaObject.malay.aboutThisGame =
+            aboutThisGame || pwaObject.malay.aboutThisGame;
+          pwaObject.malay.about = about || pwaObject.malay.about;
+          pwaObject.malay.updatedDate =
+            updatedDate || pwaObject.malay.updatedDate;
+          pwaObject.malay.casino = casino || pwaObject.malay.casino;
+          pwaObject.malay.reviewObject =
+            reviewObject || pwaObject.malay.reviewObject;
+          pwaObject.malay.screenShots =
+            screenShots || pwaObject.malay.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "singapore":
+        pwaObject = pwa.singapore;
+        if (language === "Malay") {
+          pwaObject.malay.headerReviews =
+            headerReviews || pwaObject.malay.headerReviews;
+          pwaObject.malay.hundredPlus =
+            hundredPlus || pwaObject.malay.hundredPlus;
+          pwaObject.malay.aboutThisGame =
+            aboutThisGame || pwaObject.malay.aboutThisGame;
+          pwaObject.malay.about = about || pwaObject.malay.about;
+          pwaObject.malay.updatedDate =
+            updatedDate || pwaObject.malay.updatedDate;
+          pwaObject.malay.casino = casino || pwaObject.malay.casino;
+          pwaObject.malay.reviewObject =
+            reviewObject || pwaObject.malay.reviewObject;
+          pwaObject.malay.screenShots =
+            screenShots || pwaObject.malay.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "united kingdom":
+        pwaObject = pwa.unitedKingdom;
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "pakistan":
+        pwaObject = pwa.pakistan;
+        if (language === "Urdu") {
+          pwaObject.urdu.headerReviews =
+            headerReviews || pwaObject.urdu.headerReviews;
+          pwaObject.urdu.hundredPlus =
+            hundredPlus || pwaObject.urdu.hundredPlus;
+          pwaObject.urdu.aboutThisGame =
+            aboutThisGame || pwaObject.urdu.aboutThisGame;
+          pwaObject.urdu.about = about || pwaObject.urdu.about;
+          pwaObject.urdu.updatedDate =
+            updatedDate || pwaObject.urdu.updatedDate;
+          pwaObject.urdu.casino = casino || pwaObject.urdu.casino;
+          pwaObject.urdu.reviewObject =
+            reviewObject || pwaObject.urdu.reviewObject;
+          pwaObject.urdu.screenShots =
+            screenShots || pwaObject.urdu.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "russia":
+        pwaObject = pwa.russia;
+        if (language === "Russian") {
+          pwaObject.russian.headerReviews =
+            headerReviews || pwaObject.russian.headerReviews;
+          pwaObject.russian.hundredPlus =
+            hundredPlus || pwaObject.russian.hundredPlus;
+          pwaObject.russian.aboutThisGame =
+            aboutThisGame || pwaObject.russian.aboutThisGame;
+          pwaObject.russian.about = about || pwaObject.russian.about;
+          pwaObject.russian.updatedDate =
+            updatedDate || pwaObject.russian.updatedDate;
+          pwaObject.russian.casino = casino || pwaObject.russian.casino;
+          pwaObject.russian.reviewObject =
+            reviewObject || pwaObject.russian.reviewObject;
+          pwaObject.russian.screenShots =
+            screenShots || pwaObject.russian.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "senegal":
+        pwaObject = pwa.senegal;
+        if (language === "French") {
+          pwaObject.french.headerReviews =
+            headerReviews || pwaObject.french.headerReviews;
+          pwaObject.french.hundredPlus =
+            hundredPlus || pwaObject.french.hundredPlus;
+          pwaObject.french.aboutThisGame =
+            aboutThisGame || pwaObject.french.aboutThisGame;
+          pwaObject.french.about = about || pwaObject.french.about;
+          pwaObject.french.updatedDate =
+            updatedDate || pwaObject.french.updatedDate;
+          pwaObject.french.casino = casino || pwaObject.french.casino;
+          pwaObject.french.reviewObject =
+            reviewObject || pwaObject.french.reviewObject;
+          pwaObject.french.screenShots =
+            screenShots || pwaObject.french.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "south korea":
+        pwaObject = pwa.southKorea;
+        if (language === "Korean") {
+          pwaObject.korean.headerReviews =
+            headerReviews || pwaObject.korean.headerReviews;
+          pwaObject.korean.hundredPlus =
+            hundredPlus || pwaObject.korean.hundredPlus;
+          pwaObject.korean.aboutThisGame =
+            aboutThisGame || pwaObject.korean.aboutThisGame;
+          pwaObject.korean.about = about || pwaObject.korean.about;
+          pwaObject.korean.updatedDate =
+            updatedDate || pwaObject.korean.updatedDate;
+          pwaObject.korean.casino = casino || pwaObject.korean.casino;
+          pwaObject.korean.reviewObject =
+            reviewObject || pwaObject.korean.reviewObject;
+          pwaObject.korean.screenShots =
+            screenShots || pwaObject.korean.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "turkey":
+        pwaObject = pwa.turkey;
+        if (language === "Turkish") {
+          pwaObject.turkish.headerReviews =
+            headerReviews || pwaObject.turkish.headerReviews;
+          pwaObject.turkish.hundredPlus =
+            hundredPlus || pwaObject.turkish.hundredPlus;
+          pwaObject.turkish.aboutThisGame =
+            aboutThisGame || pwaObject.turkish.aboutThisGame;
+          pwaObject.turkish.about = about || pwaObject.turkish.about;
+          pwaObject.turkish.updatedDate =
+            updatedDate || pwaObject.turkish.updatedDate;
+          pwaObject.turkish.casino = casino || pwaObject.turkish.casino;
+          pwaObject.turkish.reviewObject =
+            reviewObject || pwaObject.turkish.reviewObject;
+          pwaObject.turkish.screenShots =
+            screenShots || pwaObject.turkish.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "lithuania":
+        pwaObject = pwa.lithuania;
+        if (language === "Lithuanian") {
+          pwaObject.lithuanian.headerReviews =
+            headerReviews || pwaObject.lithuanian.headerReviews;
+          pwaObject.lithuanian.hundredPlus =
+            hundredPlus || pwaObject.lithuanian.hundredPlus;
+          pwaObject.lithuanian.aboutThisGame =
+            aboutThisGame || pwaObject.lithuanian.aboutThisGame;
+          pwaObject.lithuanian.about = about || pwaObject.lithuanian.about;
+          pwaObject.lithuanian.updatedDate =
+            updatedDate || pwaObject.lithuanian.updatedDate;
+          pwaObject.lithuanian.casino = casino || pwaObject.lithuanian.casino;
+          pwaObject.lithuanian.reviewObject =
+            reviewObject || pwaObject.lithuanian.reviewObject;
+          pwaObject.lithuanian.screenShots =
+            screenShots || pwaObject.lithuanian.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      default:
+        Console.log("not supported");
+        break;
     }
-    const pwa = await Pwa.findOne({ _id: appId, adminId });
-    if (pwa) {
-      let updatedPWA = {};
-      pwa.domain = domain || pwa.domain;
-      pwa.subDomain = subDomain || pwa.subDomain;
-      pwa.languages = languages || pwa.languages;
-      pwa.defaultLanguage = defaultLanguage || pwa.defaultLanguage;
 
-      if (language === "Arabic") {
-        pwa.arabic.headerReviews = headerReviews || pwa.arabic.headerReviews;
-        pwa.arabic.hundredPlus = hundredPlus || pwa.arabic.hundredPlus;
-        pwa.arabic.aboutThisGame = aboutThisGame || pwa.arabic.aboutThisGame;
-        pwa.arabic.about1 = about1 || pwa.arabic.about1;
-        pwa.arabic.about2 = about2 || pwa.arabic.about2;
-        pwa.arabic.about3 = about3 || pwa.arabic.about3;
-        pwa.arabic.updatedDate = updatedDate || pwa.arabic.updatedDate;
-        pwa.arabic.casino = casino || pwa.arabic.casino;
-        pwa.arabic.reviewObject = reviewObject || pwa.arabic.reviewObject;
-        pwa.arabic.icon = icon || pwa.arabic.icon;
-        pwa.arabic.logo = logo || pwa.arabic.logo;
-        pwa.arabic.appTitle = appTitle || pwa.arabic.appTitle;
-        pwa.arabic.appSubTitle = appSubTitle || pwa.arabic.appSubTitle;
-        pwa.arabic.screenShotsObject =
-          screenShotsObject || pwa.arabic.screenShotsObject;
+    if (updatedPWA) {
+      res.status(200).json(updatedPWA);
+    } else {
+      res.status(404);
+      throw new Error("App not found");
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
-        //=========================================================================
+const updatePwaGeneral = async (req, res) => {
+  console.log("updating PWA General");
+  const {
+    appId,
+    adminId,
+    languages, // not needed
+    defaultLanguage, // not needed
+    icon,
+    logo,
+    appTitle,
+    appSubTitle,
+    domain,
+    subDomain,
+    pixelId,
+    accessToken,
+    domainApp,
+    domainLanding,
+    keitaroDomain,
+    keitaroFirstCampaign,
+    keitaroSecondCampaign,
+    marketerTag,
+    backgroundPhotoMobile,
+    backgroundPhotoDesktop,
+    oneSignalApiKey,
+    oneSignalAppId,
+  } = req.body;
 
-        updatedPWA = await pwa.save();
-      }
+  if (!appId || !adminId) {
+    return res.status(404).json({ message: "missing data" });
+  }
 
-      if (language === "Chinese") {
-        pwa.chinese.headerReviews = headerReviews || pwa.chinese.headerReviews;
-        pwa.chinese.hundredPlus = hundredPlus || pwa.chinese.hundredPlus;
-        pwa.chinese.aboutThisGame = aboutThisGame || pwa.chinese.aboutThisGame;
-        pwa.chinese.about1 = about1 || pwa.chinese.about1;
-        pwa.chinese.about2 = about2 || pwa.chinese.about2;
-        pwa.chinese.about3 = about3 || pwa.chinese.about3;
-        pwa.chinese.updatedDate = updatedDate || pwa.chinese.updatedDate;
-        pwa.chinese.casino = casino || pwa.chinese.casino;
-        pwa.chinese.reviewObject = reviewObject || pwa.chinese.reviewObject;
-        pwa.chinese.icon = icon || pwa.chinese.icon;
-        pwa.chinese.logo = logo || pwa.chinese.logo;
-        pwa.chinese.appTitle = appTitle || pwa.chinese.appTitle;
-        pwa.chinese.appSubTitle = appSubTitle || pwa.chinese.appSubTitle;
-        pwa.chinese.screenShotsObject =
-          screenShotsObject || pwa.chinese.screenShotsObject;
-        updatedPWA = await pwa.save();
-      }
-      if (language === "Dutch") {
-        pwa.dutch.headerReviews = headerReviews || pwa.dutch.headerReviews;
-        pwa.dutch.hundredPlus = hundredPlus || pwa.dutch.hundredPlus;
-        pwa.dutch.aboutThisGame = aboutThisGame || pwa.dutch.aboutThisGame;
-        pwa.dutch.about1 = about1 || pwa.dutch.about1;
-        pwa.dutch.about2 = about2 || pwa.dutch.about2;
-        pwa.dutch.about3 = about3 || pwa.dutch.about3;
-        pwa.dutch.updatedDate = updatedDate || pwa.dutch.updatedDate;
-        pwa.dutch.casino = casino || pwa.dutch.casino;
-        pwa.dutch.reviewObject = reviewObject || pwa.dutch.reviewObject;
-        pwa.dutch.icon = icon || pwa.dutch.icon;
-        pwa.dutch.logo = logo || pwa.dutch.logo;
-        pwa.dutch.appTitle = appTitle || pwa.dutch.appTitle;
-        pwa.dutch.appSubTitle = appSubTitle || pwa.dutch.appSubTitle;
-        pwa.dutch.screenShotsObject =
-          screenShotsObject || pwa.dutch.screenShotsObject;
-        updatedPWA = await pwa.save();
-      }
-      if (language === "English") {
-        pwa.english.headerReviews = headerReviews || pwa.english.headerReviews;
-        pwa.english.hundredPlus = hundredPlus || pwa.english.hundredPlus;
-        pwa.english.aboutThisGame = aboutThisGame || pwa.english.aboutThisGame;
-        pwa.english.about1 = about1 || pwa.english.about1;
-        pwa.english.about2 = about2 || pwa.english.about2;
-        pwa.english.about3 = about3 || pwa.english.about3;
-        pwa.english.updatedDate = updatedDate || pwa.english.updatedDate;
-        pwa.english.casino = casino || pwa.english.casino;
-        pwa.english.reviewObject = reviewObject || pwa.english.reviewObject;
-        pwa.english.icon = icon || pwa.english.icon;
-        pwa.english.logo = logo || pwa.english.logo;
-        pwa.english.appTitle = appTitle || pwa.english.appTitle;
-        pwa.english.appSubTitle = appSubTitle || pwa.english.appSubTitle;
-        pwa.english.screenShotsObject =
-          screenShotsObject || pwa.english.screenShotsObject;
-        updatedPWA = await pwa.save();
-      }
-      if (language === "French") {
-        pwa.french.headerReviews = headerReviews || pwa.french.headerReviews;
-        pwa.french.hundredPlus = hundredPlus || pwa.french.hundredPlus;
-        pwa.french.aboutThisGame = aboutThisGame || pwa.french.aboutThisGame;
-        pwa.french.about1 = about1 || pwa.french.about1;
-        pwa.french.about2 = about2 || pwa.french.about2;
-        pwa.french.about3 = about3 || pwa.french.about3;
-        pwa.french.updatedDate = updatedDate || pwa.french.updatedDate;
-        pwa.french.casino = casino || pwa.french.casino;
-        pwa.french.reviewObject = reviewObject || pwa.french.reviewObject;
-        pwa.french.icon = icon || pwa.french.icon;
-        pwa.french.logo = logo || pwa.french.logo;
-        pwa.french.appTitle = appTitle || pwa.french.appTitle;
-        pwa.french.appSubTitle = appSubTitle || pwa.french.appSubTitle;
-        pwa.french.screenShotsObject =
-          screenShotsObject || pwa.french.screenShotsObject;
-        updatedPWA = await pwa.save();
-      }
-      if (language === "Indonesian") {
-        pwa.indonesian.headerReviews =
-          headerReviews || pwa.indonesian.headerReviews;
-        pwa.indonesian.hundredPlus = hundredPlus || pwa.indonesian.hundredPlus;
-        pwa.indonesian.aboutThisGame =
-          aboutThisGame || pwa.indonesian.aboutThisGame;
-        pwa.indonesian.about1 = about1 || pwa.indonesian.about1;
-        pwa.indonesian.about2 = about2 || pwa.indonesian.about2;
-        pwa.indonesian.about3 = about3 || pwa.indonesian.about3;
-        pwa.indonesian.updatedDate = updatedDate || pwa.indonesian.updatedDate;
-        pwa.indonesian.casino = casino || pwa.indonesian.casino;
-        pwa.indonesian.reviewObject =
-          reviewObject || pwa.indonesian.reviewObject;
-        pwa.indonesian.icon = icon || pwa.indonesian.icon;
-        pwa.indonesian.logo = logo || pwa.indonesian.logo;
-        pwa.indonesian.appTitle = appTitle || pwa.indonesian.appTitle;
-        pwa.indonesian.appSubTitle = appSubTitle || pwa.indonesian.appSubTitle;
-        pwa.indonesian.screenShotsObject =
-          screenShotsObject || pwa.indonesian.screenShotsObject;
-        updatedPWA = await pwa.save();
-      }
-      if (language === "Urdu") {
-        pwa.urdu.headerReviews = headerReviews || pwa.urdu.headerReviews;
-        pwa.urdu.hundredPlus = hundredPlus || pwa.urdu.hundredPlus;
-        pwa.urdu.aboutThisGame = aboutThisGame || pwa.urdu.aboutThisGame;
-        pwa.urdu.about1 = about1 || pwa.urdu.about1;
-        pwa.urdu.about2 = about2 || pwa.urdu.about2;
-        pwa.urdu.about3 = about3 || pwa.urdu.about3;
-        pwa.urdu.updatedDate = updatedDate || pwa.urdu.updatedDate;
-        pwa.urdu.casino = casino || pwa.urdu.casino;
-        pwa.urdu.reviewObject = reviewObject || pwa.urdu.reviewObject;
-        pwa.urdu.icon = icon || pwa.urdu.icon;
-        pwa.urdu.logo = logo || pwa.urdu.logo;
-        pwa.urdu.appTitle = appTitle || pwa.urdu.appTitle;
-        pwa.urdu.appSubTitle = appSubTitle || pwa.urdu.appSubTitle;
-        pwa.urdu.screenShotsObject =
-          screenShotsObject || pwa.urdu.screenShotsObject;
+  const pwa = await Pwa.findOne({ _id: appId, adminId });
 
-        updatedPWA = await pwa.save();
-      }
-      if (language === "Korean") {
-        pwa.korean.headerReviews = headerReviews || pwa.korean.headerReviews;
-        pwa.korean.hundredPlus = hundredPlus || pwa.korean.hundredPlus;
-        pwa.korean.aboutThisGame = aboutThisGame || pwa.korean.aboutThisGame;
-        pwa.korean.about1 = about1 || pwa.korean.about1;
-        pwa.korean.about2 = about2 || pwa.korean.about2;
-        pwa.korean.about3 = about3 || pwa.korean.about3;
-        pwa.korean.updatedDate = updatedDate || pwa.korean.updatedDate;
-        pwa.korean.casino = casino || pwa.korean.casino;
-        pwa.korean.reviewObject = reviewObject || pwa.korean.reviewObject;
-        pwa.korean.icon = icon || pwa.korean.icon;
-        pwa.korean.logo = logo || pwa.korean.logo;
-        pwa.korean.appTitle = appTitle || pwa.korean.appTitle;
-        pwa.korean.appSubTitle = appSubTitle || pwa.korean.appSubTitle;
-        pwa.korean.screenShotsObject =
-          screenShotsObject || pwa.korean.screenShotsObject;
-        updatedPWA = await pwa.save();
-      }
-      if (language === "Russian") {
-        pwa.russian.headerReviews = headerReviews || pwa.russian.headerReviews;
-        pwa.russian.hundredPlus = hundredPlus || pwa.russian.hundredPlus;
-        pwa.russian.aboutThisGame = aboutThisGame || pwa.russian.aboutThisGame;
-        pwa.russian.about1 = about1 || pwa.russian.about1;
-        pwa.russian.about2 = about2 || pwa.russian.about2;
-        pwa.russian.about3 = about3 || pwa.russian.about3;
-        pwa.russian.updatedDate = updatedDate || pwa.russian.updatedDate;
-        pwa.russian.casino = casino || pwa.russian.casino;
-        pwa.russian.reviewObject = reviewObject || pwa.russian.reviewObject;
-        pwa.russian.icon = icon || pwa.russian.icon;
-        pwa.russian.logo = logo || pwa.russian.logo;
-        pwa.russian.appTitle = appTitle || pwa.russian.appTitle;
-        pwa.russian.appSubTitle = appSubTitle || pwa.russian.appSubTitle;
-        pwa.russian.screenShotsObject =
-          screenShotsObject || pwa.russian.screenShotsObject;
-        updatedPWA = await pwa.save();
-      }
-      if (language === "Turkish") {
-        pwa.turkish.headerReviews = headerReviews || pwa.turkish.headerReviews;
-        pwa.turkish.hundredPlus = hundredPlus || pwa.turkish.hundredPlus;
-        pwa.turkish.aboutThisGame = aboutThisGame || pwa.turkish.aboutThisGame;
-        pwa.turkish.about1 = about1 || pwa.turkish.about1;
-        pwa.turkish.about2 = about2 || pwa.turkish.about2;
-        pwa.turkish.about3 = about3 || pwa.turkish.about3;
-        pwa.turkish.updatedDate = updatedDate || pwa.turkish.updatedDate;
-        pwa.turkish.casino = casino || pwa.turkish.casino;
-        pwa.turkish.reviewObject = reviewObject || pwa.turkish.reviewObject;
-        pwa.turkish.icon = icon || pwa.turkish.icon;
-        pwa.turkish.logo = logo || pwa.turkish.logo;
-        pwa.turkish.appTitle = appTitle || pwa.turkish.appTitle;
-        pwa.turkish.appSubTitle = appSubTitle || pwa.turkish.appSubTitle;
-        pwa.turkish.screenShotsObject =
-          screenShotsObject || pwa.turkish.screenShotsObject;
-        updatedPWA = await pwa.save();
-      }
-      if (language === "Malay") {
-        pwa.malay.headerReviews = headerReviews || pwa.malay.headerReviews;
-        pwa.malay.hundredPlus = hundredPlus || pwa.malay.hundredPlus;
-        pwa.malay.aboutThisGame = aboutThisGame || pwa.malay.aboutThisGame;
-        pwa.malay.about1 = about1 || pwa.malay.about1;
-        pwa.malay.about2 = about2 || pwa.malay.about2;
-        pwa.malay.about3 = about3 || pwa.malay.about3;
-        pwa.malay.updatedDate = updatedDate || pwa.malay.updatedDate;
-        pwa.malay.casino = casino || pwa.malay.casino;
-        pwa.malay.reviewObject = reviewObject || pwa.malay.reviewObject;
-        pwa.malay.icon = icon || pwa.malay.icon;
-        pwa.malay.logo = logo || pwa.malay.logo;
-        pwa.malay.appTitle = appTitle || pwa.malay.appTitle;
-        pwa.malay.appSubTitle = appSubTitle || pwa.malay.appSubTitle;
-        pwa.malay.screenShotsObject =
-          screenShotsObject || pwa.malay.screenShotsObject;
-        updatedPWA = await pwa.save();
-      }
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
 
-      if (updatedPWA) {
-        res.status(200).json(updatedPWA);
-      } else {
-        res.status(404);
-        throw new Error("App not found");
-      }
+  try {
+    let updatedPWA = {};
+    pwa.domain = domain || pwa.domain;
+    pwa.subDomain = subDomain || pwa.subDomain;
+    pwa.languages = languages || pwa.languages;
+    pwa.defaultLanguage = defaultLanguage || pwa.defaultLanguage;
+    pwa.pixelId = pixelId || pwa.pixelId;
+    pwa.accessToken = accessToken || pwa.accessToken;
+    pwa.domainApp = domainApp || pwa.domainApp;
+    pwa.domainLanding = domainLanding || pwa.domainLanding;
+    pwa.keitaroDomain = keitaroDomain || pwa.keitaroDomain;
+    pwa.keitaroFirstCampaign = keitaroFirstCampaign || pwa.keitaroFirstCampaign;
+    pwa.keitaroSecondCampaign =
+      keitaroSecondCampaign || pwa.keitaroSecondCampaign;
+    pwa.marketerTag = marketerTag || pwa.marketerTag;
+    pwa.icon = icon || pwa.icon;
+    pwa.logo = logo || pwa.logo;
+    pwa.appTitle = appTitle || pwa.appTitle;
+    pwa.appSubTitle = appSubTitle || pwa.appSubTitle;
+    pwa.backgroundPhotoMobile =
+      backgroundPhotoMobile || pwa.backgroundPhotoMobile;
+    pwa.backgroundPhotoDesktop =
+      backgroundPhotoDesktop || pwa.backgroundPhotoDesktop;
+    pwa.oneSignalApiKey = oneSignalApiKey || pwa.oneSignalApiKey;
+    pwa.oneSignalAppId = oneSignalAppId || pwa.oneSignalAppId;
+    updatedPWA = await pwa.save();
+
+    if (updatedPWA) {
+      res.status(200).json(updatedPWA);
+    } else {
+      res.status(404);
+      throw new Error("App not found");
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const updatePwaByCountryAndLanguage = async (req, res) => {
+  console.log("updating PWA");
+  const {
+    appId,
+    adminId,
+    language,
+    headerReviews,
+    hundredPlus,
+    aboutThisGame,
+    about,
+    updatedDate,
+    reviewObject,
+    screenShots,
+    country,
+    casino,
+  } = req.body;
+
+  console.log({
+    appData: req.body,
+  });
+
+  let pwaObject = {};
+  // if (!appId) {
+  //   console.log("appId required");
+  //   return res.status(404).json({ message: "appId required" });
+  // }
+  // if (!adminId) {
+  //   console.log("adminId required");
+  //   return res.status(404).json({ message: "adminId required" });
+  // }
+  // if (!language) {
+  //   console.log("language required");
+  //   return res.status(404).json({ message: "language required" });
+  // }
+
+  if (!country || !appId || !adminId) {
+    return res.status(404).json({ message: "missing data" });
+  }
+
+  const pwa = await Pwa.findOne({ _id: appId, adminId });
+
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
+
+  try {
+    let updatedPWA = {};
+
+    switch (country) {
+      case "egypt":
+        pwaObject = pwa.egypt;
+        if (language === "Arabic") {
+          pwaObject.arabic.headerReviews =
+            headerReviews || pwaObject.arabic.headerReviews;
+          pwaObject.arabic.hundredPlus =
+            hundredPlus || pwaObject.arabic.hundredPlus;
+          pwaObject.arabic.aboutThisGame =
+            aboutThisGame || pwaObject.arabic.aboutThisGame;
+          pwaObject.arabic.about = about || pwaObject.arabic.about;
+          pwaObject.arabic.updatedDate =
+            updatedDate || pwaObject.arabic.updatedDate;
+          pwaObject.arabic.casino = casino || pwaObject.arabic.casino;
+          pwaObject.arabic.reviewObject =
+            reviewObject || pwaObject.arabic.reviewObject;
+          pwaObject.arabic.screenShots =
+            screenShots || pwaObject.arabic.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+
+      case "iraq":
+        pwaObject = pwa.iraq;
+        if (language === "Arabic") {
+          pwaObject.arabic.headerReviews =
+            headerReviews || pwaObject.arabic.headerReviews;
+          pwaObject.arabic.hundredPlus =
+            hundredPlus || pwaObject.arabic.hundredPlus;
+          pwaObject.arabic.aboutThisGame =
+            aboutThisGame || pwaObject.arabic.aboutThisGame;
+          pwaObject.arabic.about = about || pwaObject.arabic.about;
+          pwaObject.arabic.updatedDate =
+            updatedDate || pwaObject.arabic.updatedDate;
+          pwaObject.arabic.casino = casino || pwaObject.arabic.casino;
+          pwaObject.arabic.reviewObject =
+            reviewObject || pwaObject.arabic.reviewObject;
+          pwaObject.arabic.screenShots =
+            screenShots || pwaObject.arabic.screenShots;
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.icon = icon || pwaObject.english.icon;
+          pwaObject.english.logo = logo || pwaObject.english.logo;
+          pwaObject.english.appTitle = appTitle || pwaObject.english.appTitle;
+          pwaObject.english.appSubTitle =
+            appSubTitle || pwaObject.english.appSubTitle;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "saudi arabia":
+        pwaObject = pwa.saudiArabia;
+        if (language === "Arabic") {
+          pwaObject.arabic.headerReviews =
+            headerReviews || pwaObject.arabic.headerReviews;
+          pwaObject.arabic.hundredPlus =
+            hundredPlus || pwaObject.arabic.hundredPlus;
+          pwaObject.arabic.aboutThisGame =
+            aboutThisGame || pwaObject.arabic.aboutThisGame;
+          pwaObject.arabic.about = about || pwaObject.arabic.about;
+          pwaObject.arabic.updatedDate =
+            updatedDate || pwaObject.arabic.updatedDate;
+          pwaObject.arabic.casino = casino || pwaObject.arabic.casino;
+          pwaObject.arabic.reviewObject =
+            reviewObject || pwaObject.arabic.reviewObject;
+          pwaObject.arabic.screenShots =
+            screenShots || pwaObject.arabic.screenShots;
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "germany":
+        pwaObject = pwa.germany;
+        if (language === "Dutch") {
+          pwaObject.dutch.headerReviews =
+            headerReviews || pwaObject.dutch.headerReviews;
+          pwaObject.dutch.hundredPlus =
+            hundredPlus || pwaObject.dutch.hundredPlus;
+          pwaObject.dutch.aboutThisGame =
+            aboutThisGame || pwaObject.dutch.aboutThisGame;
+          pwaObject.dutch.about = about || pwaObject.dutch.about;
+          pwaObject.dutch.updatedDate =
+            updatedDate || pwaObject.dutch.updatedDate;
+          pwaObject.dutch.casino = casino || pwaObject.dutch.casino;
+          pwaObject.dutch.reviewObject =
+            reviewObject || pwaObject.dutch.reviewObject;
+          pwaObject.dutch.screenShots =
+            screenShots || pwaObject.dutch.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.icon = icon || pwaObject.english.icon;
+          pwaObject.english.logo = logo || pwaObject.english.logo;
+          pwaObject.english.appTitle = appTitle || pwaObject.english.appTitle;
+          pwaObject.english.appSubTitle =
+            appSubTitle || pwaObject.english.appSubTitle;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "netherlands":
+        pwaObject = pwa.netherlands;
+        if (language === "Dutch") {
+          pwaObject.dutch.headerReviews =
+            headerReviews || pwaObject.dutch.headerReviews;
+          pwaObject.dutch.hundredPlus =
+            hundredPlus || pwaObject.dutch.hundredPlus;
+          pwaObject.dutch.aboutThisGame =
+            aboutThisGame || pwaObject.dutch.aboutThisGame;
+          pwaObject.dutch.about = about || pwaObject.dutch.about;
+          pwaObject.dutch.updatedDate =
+            updatedDate || pwaObject.dutch.updatedDate;
+          pwaObject.dutch.casino = casino || pwaObject.dutch.casino;
+          pwaObject.dutch.reviewObject =
+            reviewObject || pwaObject.dutch.reviewObject;
+          pwaObject.dutch.screenShots =
+            screenShots || pwaObject.dutch.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "hong kong":
+        pwaObject = pwa.hongKong;
+        if (language === "Chinese") {
+          pwaObject.chinese.headerReviews =
+            headerReviews || pwaObject.chinese.headerReviews;
+          pwaObject.chinese.hundredPlus =
+            hundredPlus || pwaObject.chinese.hundredPlus;
+          pwaObject.chinese.aboutThisGame =
+            aboutThisGame || pwaObject.chinese.aboutThisGame;
+          pwaObject.chinese.about = about || pwaObject.chinese.about;
+          pwaObject.chinese.updatedDate =
+            updatedDate || pwaObject.chinese.updatedDate;
+          pwaObject.chinese.casino = casino || pwaObject.chinese.casino;
+          pwaObject.chinese.reviewObject =
+            reviewObject || pwaObject.chinese.reviewObject;
+          pwaObject.chinese.screenShots =
+            screenShots || pwaObject.chinese.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "china":
+        pwaObject = pwa.china;
+        if (language === "Chinese") {
+          pwaObject.chinese.headerReviews =
+            headerReviews || pwaObject.chinese.headerReviews;
+          pwaObject.chinese.hundredPlus =
+            hundredPlus || pwaObject.chinese.hundredPlus;
+          pwaObject.chinese.aboutThisGame =
+            aboutThisGame || pwaObject.chinese.aboutThisGame;
+          pwaObject.chinese.about = about || pwaObject.chinese.about;
+          pwaObject.chinese.updatedDate =
+            updatedDate || pwaObject.chinese.updatedDate;
+          pwaObject.chinese.casino = casino || pwaObject.chinese.casino;
+          pwaObject.chinese.reviewObject =
+            reviewObject || pwaObject.chinese.reviewObject;
+          pwaObject.chinese.screenShots =
+            screenShots || pwaObject.chinese.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "indonesia":
+        pwaObject = pwa.indonesia;
+        if (language === "Indonesian") {
+          pwaObject.indonesian.headerReviews =
+            headerReviews || pwaObject.indonesian.headerReviews;
+          pwaObject.indonesian.hundredPlus =
+            hundredPlus || pwaObject.indonesian.hundredPlus;
+          pwaObject.indonesian.aboutThisGame =
+            aboutThisGame || pwaObject.indonesian.aboutThisGame;
+          pwaObject.indonesian.about = about || pwaObject.indonesian.about;
+          pwaObject.indonesian.updatedDate =
+            updatedDate || pwaObject.indonesian.updatedDate;
+          pwaObject.indonesian.casino = casino || pwaObject.indonesian.casino;
+          pwaObject.indonesian.reviewObject =
+            reviewObject || pwaObject.indonesian.reviewObject;
+          pwaObject.indonesian.screenShots =
+            screenShots || pwaObject.indonesian.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "malaysia":
+        pwaObject = pwa.malaysia;
+        if (language === "Malay") {
+          pwaObject.malay.headerReviews =
+            headerReviews || pwaObject.malay.headerReviews;
+          pwaObject.malay.hundredPlus =
+            hundredPlus || pwaObject.malay.hundredPlus;
+          pwaObject.malay.aboutThisGame =
+            aboutThisGame || pwaObject.malay.aboutThisGame;
+          pwaObject.malay.about = about || pwaObject.malay.about;
+          pwaObject.malay.updatedDate =
+            updatedDate || pwaObject.malay.updatedDate;
+          pwaObject.malay.casino = casino || pwaObject.malay.casino;
+          pwaObject.malay.reviewObject =
+            reviewObject || pwaObject.malay.reviewObject;
+          pwaObject.malay.screenShots =
+            screenShots || pwaObject.malay.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "singapore":
+        pwaObject = pwa.singapore;
+        if (language === "Malay") {
+          pwaObject.malay.headerReviews =
+            headerReviews || pwaObject.malay.headerReviews;
+          pwaObject.malay.hundredPlus =
+            hundredPlus || pwaObject.malay.hundredPlus;
+          pwaObject.malay.aboutThisGame =
+            aboutThisGame || pwaObject.malay.aboutThisGame;
+          pwaObject.malay.about = about || pwaObject.malay.about;
+          pwaObject.malay.updatedDate =
+            updatedDate || pwaObject.malay.updatedDate;
+          pwaObject.malay.casino = casino || pwaObject.malay.casino;
+          pwaObject.malay.reviewObject =
+            reviewObject || pwaObject.malay.reviewObject;
+          pwaObject.malay.screenShots =
+            screenShots || pwaObject.malay.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "united kingdom":
+        pwaObject = pwa.unitedKingdom;
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "pakistan":
+        pwaObject = pwa.pakistan;
+        if (language === "Urdu") {
+          pwaObject.urdu.headerReviews =
+            headerReviews || pwaObject.urdu.headerReviews;
+          pwaObject.urdu.hundredPlus =
+            hundredPlus || pwaObject.urdu.hundredPlus;
+          pwaObject.urdu.aboutThisGame =
+            aboutThisGame || pwaObject.urdu.aboutThisGame;
+          pwaObject.urdu.about = about || pwaObject.urdu.about;
+          pwaObject.urdu.updatedDate =
+            updatedDate || pwaObject.urdu.updatedDate;
+          pwaObject.urdu.casino = casino || pwaObject.urdu.casino;
+          pwaObject.urdu.reviewObject =
+            reviewObject || pwaObject.urdu.reviewObject;
+          pwaObject.urdu.screenShots =
+            screenShots || pwaObject.urdu.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "russia":
+        pwaObject = pwa.russia;
+        if (language === "Russian") {
+          pwaObject.russian.headerReviews =
+            headerReviews || pwaObject.russian.headerReviews;
+          pwaObject.russian.hundredPlus =
+            hundredPlus || pwaObject.russian.hundredPlus;
+          pwaObject.russian.aboutThisGame =
+            aboutThisGame || pwaObject.russian.aboutThisGame;
+          pwaObject.russian.about = about || pwaObject.russian.about;
+          pwaObject.russian.updatedDate =
+            updatedDate || pwaObject.russian.updatedDate;
+          pwaObject.russian.casino = casino || pwaObject.russian.casino;
+          pwaObject.russian.reviewObject =
+            reviewObject || pwaObject.russian.reviewObject;
+          pwaObject.russian.screenShots =
+            screenShots || pwaObject.russian.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "senegal":
+        pwaObject = pwa.senegal;
+        if (language === "French") {
+          pwaObject.french.headerReviews =
+            headerReviews || pwaObject.french.headerReviews;
+          pwaObject.french.hundredPlus =
+            hundredPlus || pwaObject.french.hundredPlus;
+          pwaObject.french.aboutThisGame =
+            aboutThisGame || pwaObject.french.aboutThisGame;
+          pwaObject.french.about = about || pwaObject.french.about;
+          pwaObject.french.updatedDate =
+            updatedDate || pwaObject.french.updatedDate;
+          pwaObject.french.casino = casino || pwaObject.french.casino;
+          pwaObject.french.reviewObject =
+            reviewObject || pwaObject.french.reviewObject;
+          pwaObject.french.screenShots =
+            screenShots || pwaObject.french.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "south korea":
+        pwaObject = pwa.southKorea;
+        if (language === "Korean") {
+          pwaObject.korean.headerReviews =
+            headerReviews || pwaObject.korean.headerReviews;
+          pwaObject.korean.hundredPlus =
+            hundredPlus || pwaObject.korean.hundredPlus;
+          pwaObject.korean.aboutThisGame =
+            aboutThisGame || pwaObject.korean.aboutThisGame;
+          pwaObject.korean.about = about || pwaObject.korean.about;
+          pwaObject.korean.updatedDate =
+            updatedDate || pwaObject.korean.updatedDate;
+          pwaObject.korean.casino = casino || pwaObject.korean.casino;
+          pwaObject.korean.reviewObject =
+            reviewObject || pwaObject.korean.reviewObject;
+          pwaObject.korean.screenShots =
+            screenShots || pwaObject.korean.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "turkey":
+        pwaObject = pwa.turkey;
+        if (language === "Turkish") {
+          pwaObject.turkish.headerReviews =
+            headerReviews || pwaObject.turkish.headerReviews;
+          pwaObject.turkish.hundredPlus =
+            hundredPlus || pwaObject.turkish.hundredPlus;
+          pwaObject.turkish.aboutThisGame =
+            aboutThisGame || pwaObject.turkish.aboutThisGame;
+          pwaObject.turkish.about = about || pwaObject.turkish.about;
+          pwaObject.turkish.updatedDate =
+            updatedDate || pwaObject.turkish.updatedDate;
+          pwaObject.turkish.casino = casino || pwaObject.turkish.casino;
+          pwaObject.turkish.reviewObject =
+            reviewObject || pwaObject.turkish.reviewObject;
+          pwaObject.turkish.screenShots =
+            screenShots || pwaObject.turkish.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      case "lithuania":
+        pwaObject = pwa.lithuania;
+        if (language === "Lithuanian") {
+          pwaObject.lithuanian.headerReviews =
+            headerReviews || pwaObject.lithuanian.headerReviews;
+          pwaObject.lithuanian.hundredPlus =
+            hundredPlus || pwaObject.lithuanian.hundredPlus;
+          pwaObject.lithuanian.aboutThisGame =
+            aboutThisGame || pwaObject.lithuanian.aboutThisGame;
+          pwaObject.lithuanian.about = about || pwaObject.lithuanian.about;
+          pwaObject.lithuanian.updatedDate =
+            updatedDate || pwaObject.lithuanian.updatedDate;
+          pwaObject.lithuanian.casino = casino || pwaObject.lithuanian.casino;
+          pwaObject.lithuanian.reviewObject =
+            reviewObject || pwaObject.lithuanian.reviewObject;
+          pwaObject.lithuanian.screenShots =
+            screenShots || pwaObject.lithuanian.screenShots;
+
+          //=========================================================================
+
+          updatedPWA = await pwa.save();
+        }
+
+        if (language === "English") {
+          pwaObject.english.headerReviews =
+            headerReviews || pwaObject.english.headerReviews;
+          pwaObject.english.hundredPlus =
+            hundredPlus || pwaObject.english.hundredPlus;
+          pwaObject.english.aboutThisGame =
+            aboutThisGame || pwaObject.english.aboutThisGame;
+          pwaObject.english.about = about || pwaObject.english.about;
+          pwaObject.english.updatedDate =
+            updatedDate || pwaObject.english.updatedDate;
+          pwaObject.english.casino = casino || pwaObject.english.casino;
+          pwaObject.english.reviewObject =
+            reviewObject || pwaObject.english.reviewObject;
+          pwaObject.english.screenShots =
+            screenShots || pwaObject.english.screenShots;
+          updatedPWA = await pwa.save();
+        }
+
+        break;
+      default:
+        Console.log("not supported");
+        break;
+    }
+
+    if (updatedPWA) {
+      res.status(200).json(updatedPWA);
+    } else {
+      res.status(404);
+      throw new Error("App not found");
     }
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -928,5 +1985,7 @@ module.exports = {
   getPwaByIdAndLanguage,
   getPwaById,
   updatePwa,
+  updatePwaGeneral,
+  updatePwaByCountryAndLanguage,
   deletePwa,
 };

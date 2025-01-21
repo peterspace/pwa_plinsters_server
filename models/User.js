@@ -34,6 +34,20 @@ const userSchema = new mongoose.Schema(
     pushSubscription: {
       type: mongoose.Schema.Types.Mixed,
     },
+    appDomain: String,
+    // appId: String, // id of the app
+    //=============================={Start: New updates}=================================================
+    appId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Pwa",
+    },
+    entryCount: { type: Number, default: 0 },
+    keyboardLanguage: {
+      // the language of the user's keyboard, this will help with localization f content in preferred language
+      type: String,
+    },
+    //=============================={End: New updates}=================================================
+
     lastLogin: {
       type: Date,
       default: Date.now,

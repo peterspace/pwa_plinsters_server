@@ -5,6 +5,8 @@ const axios = require("axios");
 const dotenv = require("dotenv").config();
 const pixelId = process.env.FACEBOOK_PIXEL_ID; // Replace with your Pixel ID
 const accessToken = process.env.FACEBOOK_PIXEL_ACCESS_TOKEN; // Replace with your Access Token
+const one_signal_api_key = process.env.ONE_SIGNAL_API_KEY;
+const one_signal_app_id = process.env.ONE_SIGNAL_APP_ID;
 
 // Register
 // https://www.aerorescuers.pro/register/?sub_id_1=NPR&sub_id_2=236462910&sub_id_3=NPR
@@ -83,7 +85,11 @@ const createLeadEvent = async (req, res) => {
       const LeadData = await newLeadEvent.save();
       if (LeadData) {
         console.log({ LeadData });
-        await facebookPixelLeadEvent(req); // facebook conversions api by pixe
+        const playerId = user?.pushSubscription?.playerId
+        // send lead notification
+        if(playerId){
+          await sendRegistrationNotification(playerId)
+        }
       }
     }
   } catch (error) {
@@ -302,6 +308,65 @@ async function facebookPixelLeadEvent(req) {
     }
   }
 }
+
+//====================================================={Registration}====================================================================
+
+const sendRegistrationNotification = async (playerId) => {
+  const headings = {
+    ar: "تم التسجيل بنجاح", // Arabic
+    "zh-Hans": "注册成功", // Chinese
+    nl: "Registratie voltooid", // Dutch
+    en: "Registration Successful", // English
+    fr: "Inscription réussie", // French
+    id: "Pendaftaran berhasil", // Indonesian
+    fa: "ثبت نام موفقیت‌آمیز بود", // Urdu
+    ko: "등록 완료", // Korean
+    ru: "Регистрация успешна", // Russian
+    tr: "Kayıt Başarılı", // Turkish
+    ms: "Pendaftaran Berjaya", // Malay
+  };
+
+  const contents = {
+    ar: "أنت الآن جزء من عائلتنا! أهلاً بك!", // Arabic
+    "zh-Hans": "您现在是我们大家庭的一部分！欢迎！", // Chinese
+    nl: "Je maakt nu deel uit van onze familie! Welkom!", // Dutch
+    en: "You're now part of our family! Welcome!", // English
+    fr: "Vous faites maintenant partie de notre famille! Bienvenue!", // French
+    id: "Sekarang Anda menjadi bagian dari keluarga kami! Selamat datang!", // Indonesian
+    fa: "شما اکنون بخشی از خانواده ما هستید! خوش آمدید!", // Urdu
+    ko: "이제 우리 가족의 일원이 되었습니다! 환영합니다!", // Korean
+    ru: "Теперь вы часть нашей семьи! Добро пожаловать!", // Russian
+    tr: "Artık ailemizin bir parçasısınız! Hoş geldiniz!", // Turkish
+    ms: "Anda kini sebahagian daripada keluarga kami! Selamat datang!", // Malay
+  };
+
+  const data = {
+    target_channel: "push",
+    app_id: one_signal_app_id,
+    include_player_ids: [playerId], // Sending the notification to the specific user using their player_id
+    headings,
+    contents,
+  };
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${one_signal_api_key}`,
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.onesignal.com/notifications",
+      data,
+      { headers }
+    );
+
+    if (response?.data) {
+      console.log("Notification sent successfully:", response.data);
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+  }
+};
 
 module.exports = {
   createLeadEvent,

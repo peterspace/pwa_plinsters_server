@@ -1,8 +1,15 @@
 // controllers/notificationController.js
+const axios = require("axios");
+const moment = require("moment-timezone");
 const cron = require("node-cron");
 const Notification = require("../models/Notification");
 const User = require("../models/User"); // Assuming you have a User model
 const Admin = require("../models/Admin");
+const Pwa = require("../models/Pwa");
+const one_signal_api_key = process.env.ONE_SIGNAL_API_KEY;
+const one_signal_app_id = process.env.ONE_SIGNAL_APP_ID;
+const default_app_id = process.env.DEFAULT_APP_ID;
+
 // const PushNotifications = require("node-pushnotifications");
 const webpush = require("web-push");
 
@@ -812,8 +819,16 @@ const notificationTargetGroup = async (days) => {
 
 // notificationTargetGroup(30)
 
-const oneWeekAgoGroup = async () => {
-  const users = await User.find();
+const oneWeekAgoGroup = async (req, res) => {
+  const { appId } = req.body; // required appId to fetch app users
+  const pwa = await Pwa.findById(appId);
+  // check if the PWA exists
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa event not found" });
+  }
+  // fetch all users that are using the PWA app
+  const users = await User.find({ appId: appId }); // all users with the same appId
+
   let oneWeekAgo = [];
 
   let today = new Date();
@@ -831,7 +846,7 @@ const oneWeekAgoGroup = async () => {
   console.log({ response: oneWeekAgo });
   return oneWeekAgo; // Return the array after processing all users
 };
-
+//next step, add notification id and send directly or use playerId directly
 // oneWeekAgoGroup()
 
 // getOneWeekAgo()
@@ -860,6 +875,811 @@ async function timeDifference(timeNow, lastLogin) {
 
 // timeDifference()
 
+const sendOneSignalNotificationMain = async (req, res) => {
+  const { appId } = req.params;
+  const pwa = await Pwa.findById(appId);
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
+
+  if (!pwa.oneSignalApiKey) {
+    return res.status(404).json({ message: "Pwa notification not enabled" });
+  }
+  const one_signal_api_key = pwa.oneSignalApiKey;
+  const one_signal_app_id = pwa.oneSignalAppId;
+
+  const headings1 = {
+    ar: "Title", // Arabic required,
+    "zh-Hans": "Title", // Chinese
+    nl: "Title", // Dutch,
+    // de: "Title", // German (if necessary),
+    en: "Title", // english required,
+    fr: "Title", //French
+    id: "Title", // Indonesian,
+    fa: "Title", // urdu, //
+    ko: "Title", // Korean,
+    ru: "Title", // Russian,
+    tr: "Title", // Turkish,
+    ms: "Title", // Malay,
+  };
+
+  const subtitle1 = {
+    ar: "Sub Title", // Arabic required,
+    "zh-Hans": "Sub Title", // Chinese
+    nl: "Sub Title", // Dutch,
+    // de: "Sub Title", // German (if necessary),
+    en: "Sub Title", // english required,
+    fr: "Sub Title", //French
+    id: "Sub Title", // Indonesian,
+    fa: "Sub Title", // urdu, //
+    ko: "Sub Title", // Korean,
+    ru: "Sub Title", // Russian,
+    tr: "Sub Title", // Turkish,
+    ms: "Sub Title", // Malay,
+  };
+
+  const contents1 = {
+    ar: "Hello, world", // Arabic required,
+    "zh-Hans": "你好世界", // Chinese
+    nl: "Hello, world", // Dutch,
+    // de: "Hello, world", // German (if necessary),
+    en: "Hello, world", // english required,
+    fr: "Bonjour le monde", //French
+    id: "Hello, world", // Indonesian,
+    fa: "Hello, world", // urdu, //
+    ko: "Hello, world", // Korean,
+    ru: "Hello, world", // Russian,
+    tr: "Hello, world", // Turkish,
+    ms: "Hello, world", // Malay,
+  };
+
+  const headings = { en: "English Title" };
+  const contents = { en: "English Message" };
+  const data = {
+    target_channel: "push",
+    // included_segments: ["Subscribed Users"], // all users or selected users
+    included_segments: ["All"],
+    app_id: one_signal_app_id,
+    headings,
+    contents,
+  };
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${one_signal_api_key}`, // Replace with your actual OneSignal API key
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.onesignal.com/notifications",
+      data,
+      { headers }
+    );
+
+    if (response?.data) {
+      console.log("Notification sent successfully:", response.data);
+      const id = response.data?.id;
+
+      if (id) {
+        const result = {
+          id,
+        };
+        res.status(200).json(result);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// sendOneSignalNotification()
+
+const sendOneSignalNotification = async (req, res) => {
+  const { appId } = req.body;
+  const pwa = await Pwa.findById(appId);
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
+
+  if (!pwa.oneSignalApiKey) {
+    return res.status(404).json({ message: "Pwa notification not enabled" });
+  }
+  const one_signal_api_key = pwa.oneSignalApiKey;
+  const one_signal_app_id = pwa.oneSignalAppId;
+
+  const headings = {
+    ar: "Title", // Arabic required,
+    "zh-Hans": "Title", // Chinese
+    nl: "Title", // Dutch,
+    // de: "Title", // German (if necessary),
+    en: "Title", // english required,
+    fr: "Title", //French
+    id: "Title", // Indonesian,
+    fa: "Title", // urdu, //
+    ko: "Title", // Korean,
+    ru: "Title", // Russian,
+    tr: "Title", // Turkish,
+    ms: "Title", // Malay,
+  };
+
+  const contents = {
+    ar: "Hello, world", // Arabic required,
+    "zh-Hans": "你好世界", // Chinese
+    nl: "Hello, world", // Dutch,
+    // de: "Hello, world", // German (if necessary),
+    en: "Hello, world", // english required,
+    fr: "Bonjour le monde", //French
+    id: "Hello, world", // Indonesian,
+    fa: "Hello, world", // urdu, //
+    ko: "Hello, world", // Korean,
+    ru: "Hello, world", // Russian,
+    tr: "Hello, world", // Turkish,
+    ms: "Hello, world", // Malay,
+  };
+
+  const data = {
+    target_channel: "push",
+    // included_segments: ["Subscribed Users"], // all users or selected users
+    included_segments: ["All"],
+    app_id: one_signal_app_id,
+    headings,
+    contents,
+  };
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${one_signal_api_key}`, // Replace with your actual OneSignal API key
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.onesignal.com/notifications",
+      data,
+      { headers }
+    );
+
+    if (response?.data) {
+      console.log("Notification sent successfully:", response.data);
+      const id = response.data?.id;
+
+      if (id) {
+        const result = {
+          id,
+        };
+        res.status(200).json(result);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+//This is a sample subscription object stored in user.pushSubscription
+
+//Now we can map users by country and send dedicated messages to users from selected countries and work with their specific time zones
+/**
+ Examples
+ 1. localized messages to users by country at 10:00Am their local time
+ 2. Special bonus to users in specific countries
+ * 
+ */
+//
+const subscription = {
+  playerId: "0cdc6460-9aa6-4d16-ba76-3f7f04dbdc92",
+  deviceToken:
+    "https://fcm.googleapis.com/fcm/send/e693H_dVdsA:APA91bHuEDeX0q-5Lniuv6FA_1OYn19uQCzY7-8JvI9PWZBze2Akuo2K1xyKLxuotoC64NMyVtCav-hM2Ih1FusVY6W1CcXL_nW3k2BX2FDoOgIRn7eR7CkwhuU3O5S3t9SrQaWDwLgM",
+  optedIn: true,
+  country: "Russia",
+};
+
+//====================================================={ONE SIGNALS NOTIFICATIONS}====================================================================
+// const playerId = "0cdc6460-9aa6-4d16-ba76-3f7f04dbdc92"; // imac
+const playerId = "463f80f5-cdbe-407b-a298-bd7cd2769f51"; // iphone
+// const playerId = "cba03428-0a46-4c43-ad1f-a55ba66a8302"; // android
+//
+//
+//====================================================={BONUS}====================================================================
+
+const sendBonusNotificationByCountry = async (req, res) => {
+  const { appId, userCountry } = req.body;
+  const pwa = await Pwa.findById(appId);
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
+
+  if (!pwa.oneSignalApiKey) {
+    return res.status(404).json({ message: "Pwa notification not enabled" });
+  }
+  const one_signal_api_key = pwa.oneSignalApiKey;
+  const one_signal_app_id = pwa.oneSignalAppId;
+  let contents;
+
+  // Set content based on the user's country
+  switch (userCountry) {
+    case "MY": // Malaysia
+      contents = {
+        ar: "لقد حصلت على مكافأة قدرها 300 MYR", // Arabic
+        "zh-Hans": "您刚刚赚取了300 MYR的奖金", // Chinese
+        nl: "Je hebt zojuist een bonus van 300 MYR verdiend", // Dutch
+        en: "You just earned a bonus of 300 MYR", // English
+        fr: "Vous venez de gagner un bonus de 300 MYR", // French
+        id: "Anda baru saja mendapatkan bonus 300 MYR", // Indonesian
+        fa: "شما به تازگی 300 MYR پاداش دریافت کرده‌اید", // Urdu
+        ko: "방금 300 MYR 보너스를 받았습니다", // Korean
+        ru: "Вы только что получили бонус 300 MYR", // Russian
+        tr: "Az önce 300 MYR bonus kazandınız", // Turkish
+        ms: "Anda baru sahaja menerima bonus 300 MYR", // Malay
+      };
+      break;
+    case "EG": // Egypt
+      contents = {
+        ar: "لقد حصلت على مكافأة قدرها 3000 EGP", // Arabic
+        "zh-Hans": "您刚刚赚取了3000 EGP的奖金", // Chinese
+        nl: "Je hebt zojuist een bonus van 3000 EGP verdiend", // Dutch
+        en: "You just earned a bonus of 3000 EGP", // English
+        fr: "Vous venez de gagner un bonus de 3000 EGP", // French
+        id: "Anda baru saja mendapatkan bonus 3000 EGP", // Indonesian
+        fa: "شما به تازگی 3000 EGP پاداش دریافت کرده‌اید", // Urdu
+        ko: "방금 3000 EGP 보너스를 받았습니다", // Korean
+        ru: "Вы только что получили бонус 3000 EGP", // Russian
+        tr: "Az önce 3000 EGP bonus kazandınız", // Turkish
+        ms: "Anda baru sahaja menerima bonus 3000 EGP", // Malay
+      };
+      break;
+    case "RU": // Russia
+      contents = {
+        ar: "لقد حصلت على مكافأة قدرها 5000 RUB", // Arabic
+        "zh-Hans": "您刚刚赚取了5000 RUB的奖金", // Chinese
+        nl: "Je hebt zojuist een bonus van 5000 RUB verdiend", // Dutch
+        en: "You just earned a bonus of 5000 RUB", // English
+        fr: "Vous venez de gagner un bonus de 5000 RUB", // French
+        id: "Anda baru saja mendapatkan bonus 5000 RUB", // Indonesian
+        fa: "شما به تازگی 5000 RUB پاداش دریافت کرده‌اید", // Urdu
+        ko: "방금 5000 RUB 보너스를 받았습니다", // Korean
+        ru: "Вы только что получили бонус 5000 RUB", // Russian
+        tr: "Az önce 5000 RUB bonus kazandınız", // Turkish
+        ms: "Anda baru sahaja menerima bonus 5000 RUB", // Malay
+      };
+      break;
+    default:
+      contents = {
+        ar: "لقد حصلت على مكافأة قدرها 50USD", // Arabic
+        "zh-Hans": "您刚刚赚取了50USD的奖金", // Chinese
+        nl: "Je hebt zojuist een bonus van 50USD verdiend", // Dutch
+        en: "You just earned a bonus of 50 USD", // English
+        fr: "Vous venez de gagner un bonus de 50 USD", // French
+        id: "Anda baru saja mendapatkan bonus 50 USD", // Indonesian
+        fa: "شما به تازگی 50 USD پاداش دریافت کرده‌اید", // Urdu
+        ko: "방금 50 USD 보너스를 받았습니다", // Korean
+        ru: "Вы только что получили бонус 50 USD", // Russian
+        tr: "Az önce 50 USD bonus kazandınız", // Turkish
+        ms: "Anda baru sahaja menerima bonus 50 USD", // Malay
+      };
+  }
+
+  const headings = {
+    ar: "مكافأة", // Arabic
+    "zh-Hans": "奖励", // Chinese
+    nl: "Bonus", // Dutch
+    en: "Bonus", // English
+    fr: "Bonus", // French
+    id: "Bonus", // Indonesian
+    fa: "پاداش", // Urdu
+    ko: "보너스", // Korean
+    ru: "Бонус", // Russian
+    tr: "Bonus", // Turkish
+    ms: "Bonus", // Malay
+  };
+
+  const data = {
+    target_channel: "push",
+    included_segments: ["All"],
+    // include_player_ids: [playerId], // Sending the notification to the specific user using their player_id
+    app_id: one_signal_app_id,
+    headings,
+    contents,
+  };
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${one_signal_api_key}`,
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.onesignal.com/notifications",
+      data,
+      { headers }
+    );
+
+    if (response?.data) {
+      console.log("Notification sent successfully:", response.data);
+      const id = response.data?.id;
+
+      if (id) {
+        const result = {
+          id,
+        };
+        res.status(200).json(result);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+// sendBonusNotificationByCountry('MY'); // For Malaysia
+// sendBonusNotificationByCountry('EG'); // For Egypt
+// sendBonusNotificationByCountry('RU'); // For Russia
+// sendBonusNotificationByCountry('US'); // For the default case (50 USD)
+
+//====================================================={Registration}====================================================================
+
+const sendRegistrationNotification1 = async (req, res) => {
+  const { appId, playerId } = req.body;
+  const pwa = await Pwa.findById(appId);
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
+
+  if (!pwa.oneSignalApiKey) {
+    return res.status(404).json({ message: "Pwa notification not enabled" });
+  }
+  const one_signal_api_key = pwa.oneSignalApiKey;
+  const one_signal_app_id = pwa.oneSignalAppId;
+
+  const headings = {
+    ar: "تم التسجيل بنجاح", // Arabic
+    "zh-Hans": "注册成功", // Chinese
+    nl: "Registratie voltooid", // Dutch
+    en: "Registration Successful", // English
+    fr: "Inscription réussie", // French
+    id: "Pendaftaran berhasil", // Indonesian
+    fa: "ثبت نام موفقیت‌آمیز بود", // Urdu
+    ko: "등록 완료", // Korean
+    ru: "Регистрация успешна", // Russian
+    tr: "Kayıt Başarılı", // Turkish
+    ms: "Pendaftaran Berjaya", // Malay
+  };
+
+  const contents = {
+    ar: "أنت الآن جزء من عائلتنا! أهلاً بك!", // Arabic
+    "zh-Hans": "您现在是我们大家庭的一部分！欢迎！", // Chinese
+    nl: "Je maakt nu deel uit van onze familie! Welkom!", // Dutch
+    en: "You're now part of our family! Welcome!", // English
+    fr: "Vous faites maintenant partie de notre famille! Bienvenue!", // French
+    id: "Sekarang Anda menjadi bagian dari keluarga kami! Selamat datang!", // Indonesian
+    fa: "شما اکنون بخشی از خانواده ما هستید! خوش آمدید!", // Urdu
+    ko: "이제 우리 가족의 일원이 되었습니다! 환영합니다!", // Korean
+    ru: "Теперь вы часть нашей семьи! Добро пожаловать!", // Russian
+    tr: "Artık ailemizin bir parçasısınız! Hoş geldiniz!", // Turkish
+    ms: "Anda kini sebahagian daripada keluarga kami! Selamat datang!", // Malay
+  };
+
+  const data = {
+    target_channel: "push",
+    app_id: one_signal_app_id,
+    include_player_ids: [playerId], // Sending the notification to the specific user using their player_id
+    headings,
+    contents,
+  };
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${one_signal_api_key}`,
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.onesignal.com/notifications",
+      data,
+      { headers }
+    );
+
+    if (response?.data) {
+      console.log("Notification sent successfully:", response.data);
+      const id = response.data?.id;
+
+      if (id) {
+        const result = {
+          id,
+        };
+        res.status(200).json(result);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const sendRegistrationNotification = async (req, res) => {
+  const { appId, playerId } = req.body;
+  const pwa = await Pwa.findById(appId);
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
+
+  if (!pwa.oneSignalApiKey) {
+    return res.status(404).json({ message: "Pwa notification not enabled" });
+  }
+  const one_signal_api_key = pwa.oneSignalApiKey;
+  const one_signal_app_id = pwa.oneSignalAppId;
+
+  console.log({ pwa });
+
+  console.log({ playerId, one_signal_api_key, one_signal_api_key });
+
+  const headings = {
+    ar: "تم التسجيل بنجاح", // Arabic
+    "zh-Hans": "注册成功", // Chinese
+    nl: "Registratie voltooid", // Dutch
+    en: "Registration Successful", // English
+    fr: "Inscription réussie", // French
+    id: "Pendaftaran berhasil", // Indonesian
+    fa: "ثبت نام موفقیت‌آمیز بود", // Urdu
+    ko: "등록 완료", // Korean
+    ru: "Регистрация успешна", // Russian
+    tr: "Kayıt Başarılı", // Turkish
+    ms: "Pendaftaran Berjaya", // Malay
+  };
+
+  const contents = {
+    ar: "أنت الآن جزء من عائلتنا! أهلاً بك!", // Arabic
+    "zh-Hans": "您现在是我们大家庭的一部分！欢迎！", // Chinese
+    nl: "Je maakt nu deel uit van onze familie! Welkom!", // Dutch
+    en: "You're now part of our family! Welcome!", // English
+    fr: "Vous faites maintenant partie de notre famille! Bienvenue!", // French
+    id: "Sekarang Anda menjadi bagian dari keluarga kami! Selamat datang!", // Indonesian
+    fa: "شما اکنون بخشی از خانواده ما هستید! خوش آمدید!", // Urdu
+    ko: "이제 우리 가족의 일원이 되었습니다! 환영합니다!", // Korean
+    ru: "Теперь вы часть нашей семьи! Добро пожаловать!", // Russian
+    tr: "Artık ailemizin bir parçasısınız! Hoş geldiniz!", // Turkish
+    ms: "Anda kini sebahagian daripada keluarga kami! Selamat datang!", // Malay
+  };
+
+  const data = {
+    target_channel: "push",
+    app_id: one_signal_app_id,
+    include_player_ids: [playerId], // Sending the notification to the specific user using their player_id
+    headings,
+    contents,
+  };
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${one_signal_api_key}`,
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.onesignal.com/notifications",
+      data,
+      { headers }
+    );
+
+    if (response?.data) {
+      console.log("Notification sent successfully:", response.data);
+      const id = response.data?.id;
+
+      if (id) {
+        const result = {
+          id,
+        };
+        res.status(200).json(result);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+// sendRegistrationNotification(playerId)
+//====================================================={Purchase}====================================================================
+//====================================================={Purchase to User}====================================================================
+//Good
+const sendPurchaseNotification = async (req, res) => {
+  const { appId, playerId } = req.body;
+  const pwa = await Pwa.findById(appId);
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
+
+  if (!pwa.oneSignalApiKey) {
+    return res.status(404).json({ message: "Pwa notification not enabled" });
+  }
+  const one_signal_api_key = pwa.oneSignalApiKey;
+  const one_signal_app_id = pwa.oneSignalAppId;
+
+  const headings = {
+    ar: "شراء ناجح", // Arabic
+    "zh-Hans": "购买成功", // Chinese
+    nl: "Aankoop geslaagd", // Dutch
+    en: "Purchase Successful", // English
+    fr: "Achat réussi", // French
+    id: "Pembelian berhasil", // Indonesian
+    fa: "خرید موفقیت‌آمیز", // Urdu
+    ko: "구매 성공", // Korean
+    ru: "Покупка успешна", // Russian
+    tr: "Satın Alma Başarılı", // Turkish
+    ms: "Pembelian Berjaya", // Malay
+  };
+
+  const contents = {
+    ar: "مبروك! لقد قمت بأول إيداع لك. الآن دعنا نبدأ المرح!", // Arabic
+    "zh-Hans": "恭喜！您已完成首次存款。现在让我们开始吧！", // Chinese
+    nl: "Gefeliciteerd! Je hebt je eerste storting gedaan. Laat het plezier beginnen!", // Dutch
+    en: "Congratulations! You have made your first deposit. Now let the fun begin!", // English
+    fr: "Félicitations! Vous avez effectué votre premier dépôt. Maintenant, que le plaisir commence!", // French
+    id: "Selamat! Anda telah melakukan deposit pertama Anda. Sekarang mari kita mulai bersenang-senang!", // Indonesian
+    fa: "تبریک! شما اولین واریز خود را انجام داده‌اید. حالا بگذارید سرگرمی شروع شود!", // Urdu
+    ko: "축하합니다! 첫 입금을 완료했습니다. 이제 재미가 시작됩니다!", // Korean
+    ru: "Поздравляем! Вы сделали свой первый депозит. Теперь начинается веселье!", // Russian
+    tr: "Tebrikler! İlk deponuzu yaptınız. Şimdi eğlence başlasın!", // Turkish
+    ms: "Tahniah! Anda telah membuat deposit pertama anda. Sekarang mari kita mulakan keseronokan!", // Malay
+  };
+
+  const data = {
+    target_channel: "push",
+    app_id: one_signal_app_id,
+    include_player_ids: [playerId], // Sending the notification to the specific user using their player_id
+    headings,
+    contents,
+  };
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${one_signal_api_key}`, // Replace with your actual OneSignal API Key
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.onesignal.com/notifications",
+      data,
+      { headers }
+    );
+
+    if (response?.data) {
+      console.log("Notification sent successfully:", response.data);
+      const id = response.data?.id;
+
+      if (id) {
+        const result = {
+          id,
+        };
+        res.status(200).json(result);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Example usage:
+// Assuming you retrieved the player_id from your database for a particular user
+// const playerId = "b69f47b9-fc09-436b-a228-ef06a6d9153f"; // OneSignal's player_id for the user
+
+//
+// sendPurchaseNotification(playerId);
+
+//====================================================={app install}====================================================================
+//Good
+const sendInstallNotification = async (req, res) => {
+  const { appId, playerId } = req.body;
+  const pwa = await Pwa.findById(appId);
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
+
+  if (!pwa.oneSignalApiKey) {
+    return res.status(404).json({ message: "Pwa notification not enabled" });
+  }
+  const one_signal_api_key = pwa.oneSignalApiKey;
+  const one_signal_app_id = pwa.oneSignalAppId;
+
+  const headings = {
+    ar: "تثبيت التطبيق", // Arabic
+    "zh-Hans": "应用安装", // Chinese
+    nl: "App installatie", // Dutch
+    en: "App Installed", // English
+    fr: "Application installée", // French
+    id: "Aplikasi terpasang", // Indonesian
+    fa: "نصب اپلیکیشن", // Urdu
+    ko: "앱 설치됨", // Korean
+    ru: "Приложение установлено", // Russian
+    tr: "Uygulama Yüklendi", // Turkish
+    ms: "Aplikasi Dipasang", // Malay
+  };
+
+  const contents = {
+    ar: "لقد قمت بتثبيت التطبيق بنجاح!", // Arabic
+    "zh-Hans": "您已成功安装应用!", // Chinese
+    nl: "Je hebt de app succesvol geïnstalleerd!", // Dutch
+    en: "You have successfully installed the app!", // English
+    fr: "Vous avez installé l'application avec succès!", // French
+    id: "Anda telah berhasil menginstal aplikasi!", // Indonesian
+    fa: "شما اپلیکیشن را با موفقیت نصب کردید!", // Urdu
+    ko: "앱을 성공적으로 설치했습니다!", // Korean
+    ru: "Вы успешно установили приложение!", // Russian
+    tr: "Uygulamayı başarıyla yüklediniz!", // Turkish
+    ms: "Anda telah berjaya memasang aplikasi!", // Malay
+  };
+
+  const data = {
+    target_channel: "push",
+    app_id: one_signal_app_id,
+    include_player_ids: [playerId], // Sending the notification to the specific user using their player_id
+    headings,
+    contents,
+  };
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${one_signal_api_key}`,
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.onesignal.com/notifications",
+      data,
+      { headers }
+    );
+
+    if (response?.data) {
+      console.log("Notification sent successfully:", response.data);
+      const id = response.data?.id;
+      if (id) {
+        const result = {
+          id,
+        };
+        res.status(200).json(result);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+// sendInstallNotification(playerId);
+//====================================================={Daily notifications}====================================================================
+
+// List of countries and their time zones
+const countryTimeZones = {
+  EG: "Africa/Cairo", // Egypt
+  DE: "Europe/Berlin", // Germany
+  HK: "Asia/Hong_Kong", // Hong Kong
+  CN: "Asia/Shanghai", // China
+  ID: "Asia/Jakarta", // Indonesia
+  MY: "Asia/Kuala_Lumpur", // Malaysia
+  PK: "Asia/Karachi", // Pakistan
+  RU: "Europe/Moscow", // Russia
+  SA: "Asia/Riyadh", // Saudi Arabia
+  SN: "Africa/Dakar", // Senegal
+  SG: "Asia/Singapore", // Singapore
+  KR: "Asia/Seoul", // South Korea
+  TR: "Europe/Istanbul", // Turkey
+  IQ: "Asia/Baghdad", // Iraq
+};
+//Good
+// Function to send the daily notification based on the country
+const sendDailyNotificationToAllCountries = async (req, res) => {
+  const { appId, playerId } = req.body;
+  const pwa = await Pwa.findById(appId);
+  if (!pwa) {
+    return res.status(404).json({ message: "Pwa not found" });
+  }
+
+  if (!pwa.oneSignalApiKey) {
+    return res.status(404).json({ message: "Pwa notification not enabled" });
+  }
+  const one_signal_api_key = pwa.oneSignalApiKey;
+  const one_signal_app_id = pwa.oneSignalAppId;
+
+  // const utcTime = "10:00"; // UTC time for 10:00 AM
+  const utcTime = "07:00"; // UTC time for 07:00 AM
+
+  for (const [countryCode, timeZone] of Object.entries(countryTimeZones)) {
+    // Convert 10:00 AM UTC to the local time for each country
+    const localTime = moment.tz(utcTime, "HH:mm", "UTC").tz(timeZone);
+    const sendTime = localTime.format(); // Get the time in ISO 8601 format
+
+    // Schedule cron job to send the notification at the calculated local time
+    cron.schedule(`${localTime.minutes()} ${localTime.hours()} * * *`, () => {
+      console.log(
+        `Sending "Good morning" notification to ${countryCode} at local time: ${sendTime}`
+      );
+      sendBonusNotification(countryCode, one_signal_api_key, one_signal_app_id); // Send the same notification to all countries
+    });
+  }
+};
+
+// Function to send the bonus notification (same content for all)
+const sendBonusNotification = async (
+  userCountry,
+  one_signal_api_key,
+  one_signal_app_id
+) => {
+  // Content to send (same for all countries, translated)
+
+  const headings = {
+    ar: "صباح الخير", // Arabic
+    "zh-Hans": "早安", // Chinese
+    nl: "Goedemorgen", // Dutch
+    en: "Good morning", // English
+    fr: "Bonjour", // French
+    id: "Selamat pagi", // Indonesian
+    fa: "صبح بخیر", // Persian (Farsi)
+    ko: "좋은 아침", // Korean
+    ru: "Доброе утро", // Russian
+    tr: "Günaydın", // Turkish
+    ms: "Selamat pagi", // Malay
+  };
+
+  const contents = {
+    ar: "مرحبًا بك في يوم جديد ومثير!", // Arabic
+    "zh-Hans": "欢迎来到全新激动人心的一天！", // Chinese
+    nl: "Welkom bij een nieuwe en opwindende dag!", // Dutch
+    en: "Welcome to a new and exciting day!", // English
+    fr: "Bienvenue dans un nouveau et excitant jour!", // French
+    id: "Selamat datang di hari baru yang menyenangkan!", // Indonesian
+    fa: "به یک روز جدید و هیجان انگیز خوش آمدید!", // Persian (Farsi)
+    ko: "새롭고 신나는 하루가 시작되었습니다!", // Korean
+    ru: "Добро пожаловать в новый захватывающий день!", // Russian
+    tr: "Yeni ve heyecan verici bir güne hoş geldiniz!", // Turkish
+    ms: "Selamat datang ke hari baru yang menarik!", // Malay
+  };
+  const data = {
+    app_id: one_signal_app_id, // Your OneSignal App ID
+    include_segments: ["All"], // Send to all subscribers
+    // include_player_ids: [playerId], // Sending the notification to the specific user using their player_id
+    headings, // Translated heading (Good morning)
+    contents, // Translated content (Welcome to a new and exciting day)
+    content_available: true,
+    small_icon: "ic_notification_icon", // Optional: Small icon for the notification
+    data: {
+      PushTitle: "Scheduled Notification",
+    },
+  };
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Basic ${one_signal_api_key}`, // Replace with your OneSignal API Key
+  };
+
+  try {
+    const response = await axios.post(
+      "https://api.onesignal.com/notifications",
+      data,
+      { headers }
+    );
+
+    if (response?.data) {
+      console.log("Notification sent successfully:", response.data);
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+  }
+};
+
+// Start the process of sending daily notifications
+// sendDailyNotificationToAllCountries();
+
+/*
+
+ Notifications
+ 1. Install
+ 2. Lead
+ 3. Purchase
+ 4. Bonus
+ 5. Daily 
+ 
+ */
+
+//====================================================={ONE SIGNALS NOTIFICATIONS}====================================================================
+
 module.exports = {
   createNotification,
   createSingleNotification,
@@ -871,6 +1691,14 @@ module.exports = {
   subscribeUser,
   unsubscribeUser,
   broadcast,
+  oneWeekAgoGroup,
+  sendOneSignalNotificationMain,
+  sendOneSignalNotification,
+  sendBonusNotificationByCountry,
+  sendRegistrationNotification,
+  sendPurchaseNotification,
+  sendInstallNotification,
+  sendDailyNotificationToAllCountries,
 };
 
 //endpoint1: https://fcm.googleapis.com/fcm/send/f-1gez1jkcI:APA91bErUS1ipYItBeMjlYY43ew4AOUVuK2p57KXPKFIUcP0nn-iDazY_ERTQeiAN6epwXqbltyhrtwvYL5C3fpDuZh2B8rG9pS7vPNR0UJdHdIalhP6ZXEKkqzxg3ky8xTNtgkdZ-XM
