@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
     },
     appInstalled: { type: Boolean, default: false },
+    facebookAppInstalled: { type: Boolean, default: false },
     userIpAddresses: [String], // array of ips by same user. default been index 0
     supportedCountry: { type: Boolean, default: false },
     role: {

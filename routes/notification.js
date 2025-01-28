@@ -21,6 +21,7 @@ const {
   sendPurchaseNotification,
   sendInstallNotification,
   sendDailyNotificationToAllCountries,
+  
 } = require("../controllers/notificationController");
 
 // CRUD routes for notifications
@@ -35,7 +36,6 @@ router.post("/send/:id", sendNotification);
 router.post("/send-to-target-users", sendTargetGroupNotification);
 router.post("/subscribe", subscribeUser);
 router.post("/unsubscribe", unsubscribeUser);
-router.get("/broadcast", broadcast);
 router.get("/broadcast", broadcast);
 router.post("/oneWeekAgoGroup", oneWeekAgoGroup);
 router.post("/sendOneSignalNotificationMain", sendOneSignalNotificationMain);

@@ -27,7 +27,7 @@ const userRoutes = require("./routes/user.js");
 const pwaRoutes = require("./routes/pwa.js");
 const { rateLimit } = require("express-rate-limit");
 // cron job for periodic notification
-require("./jobs/scheduleNotifications");
+require("./jobs/scheduleNotifications.js");
 
 const PORT = process.env.PORT || 5000;
 const keitaro_first_campaign = process.env.KEITARO_FIRST_CAMPAIGN; // for selecting country
@@ -245,7 +245,63 @@ app.get("/all_users", async (req, res) => {
 });
 
 //======{new}===============================
+app.post("/register1", async (req, res) => {
+  console.log("calling register endpoint");
 
+  const { id, user_id, device } = req.body;
+  const ip = req.clientIp;
+  console.log({ userIPAddress: ip });
+  console.log({ userData: req.body });
+
+  let referralLink = id ? `/?${id}` : null;
+  // Allow multiple registration with same ip with different devices or browsers and for different ips
+  try {
+    // Priority 1: Check if `user_id` is provided and valid
+    if (user_id) {
+      const existingUser = await User.findById(user_id);
+      if (existingUser) {
+        //existing user by user_id is using the registration API mistakenly
+        console.log({
+          info: "existing user by user_id is using the registration API mistakenly",
+        });
+        console.log("User already registered with this ID.");
+        return res.status(200).json({
+          userId: existingUser._id,
+          page: "black",
+        });
+      } else {
+        //old user by user_id is using the registration, but the user is no longer on the database due to database cleanup
+        console.log({
+          info: "old user by user_id is using the registration route, but the user is no longer on the database due to database cleanup",
+        });
+
+        console.log("User ID not found, creating new account.");
+        const newUser = await createNewUser(ip, referralLink, device);
+        return res.status(201).json({
+          userId: newUser._id,
+          page: "black",
+        });
+      }
+    } else {
+      //first registration attempt, no user and no ip in database
+      console.log({
+        info: "first registration attempt on new device, no user id found",
+      });
+      console.log(
+        "No user found by ID, creating new user for existing IP and new device."
+      );
+      const newUser = await createNewUser(ip, referralLink, device);
+      return res.status(201).json({
+        userId: newUser._id,
+        page: "black",
+      });
+    }
+  } catch (error) {
+    console.error("Error during registration:", error);
+    return res.status(500).json({ message: "Internal Server Error." });
+  }
+});
+//updated
 app.post("/register", async (req, res) => {
   console.log("calling register endpoint");
 
@@ -445,8 +501,7 @@ app.post("/user-info", async (req, res) => {
   try {
     // Priority 1: Check with user_id
     if (user_id) {
-      const userExistsByID = await User.findById(user_id); // user id is always unique, so there is no need to find by app
-
+      const userExistsByID = await User.findById(user_id);
       if (userExistsByID) {
         console.log({
           info: "old user found by user_id and opening the app through the user-info route ",
@@ -511,8 +566,6 @@ app.post("/user-info", async (req, res) => {
 
     if (ip) {
       const users = await User.find({ ipAddress: ip }).sort({ updatedAt: -1 }); //1 for ascending and -1 for descending (descending means having the most recently updated at the top)
-      // Modify to find by ip and appId
-      //const users = await User.find({ ipAddress: ip, appId:deviceAppId }).sort({ updatedAt: -1 }); //1 for ascending and -1 for descending (descending means having the most recently updated at the top)
       if (users) {
         console.log({
           info: "new user found by ip and opening the app for the first time in the PWA through the user-info route ",
@@ -532,36 +585,6 @@ app.post("/user-info", async (req, res) => {
         console.log("User not found by IP Address, creating new account.");
         const newUser = await createNewUser(ip, null, device, deviceAppId);
         return res.status(201).json({ user: newUser });
-      }
-    }
-  } catch (error) {
-    console.error("Error fetching user info:", error);
-    return res.status(500).json({ message: "Internal Server Error." });
-  }
-});
-
-app.patch("/app-install", async (req, res) => {
-  console.log("checking app Install");
-
-  const { user_id } = req.body;
-  try {
-    // Priority 1: Check with user_id
-    if (user_id) {
-      const userExistsByID = await User.findById(user_id); // user id is always unique, so there is no need to find by app
-
-      if (userExistsByID) {
-        console.log({
-          info: "updating user installed app on facebook",
-        });
-        if (userExistsByID.facebookAppInstalled == false) {
-          userExistsByID.facebookAppInstalled = true;
-          const updatedUser = await userExistsByID.save();
-
-          if (updatedUser) {
-            console.log({ message: "facebook app Installed" });
-            return res.status(201).json({ user: updatedUser });
-          }
-        }
       }
     }
   } catch (error) {
