@@ -25,6 +25,8 @@ const notificationRoutes = require("./routes/notification.js");
 
 const userRoutes = require("./routes/user.js");
 const pwaRoutes = require("./routes/pwa.js");
+const keitaroRoutes = require("./routes/keitaro.js");
+
 const { rateLimit } = require("express-rate-limit");
 // cron job for periodic notification
 require("./jobs/scheduleNotifications");
@@ -109,6 +111,7 @@ app.use("/user", userRoutes);
 app.use("/notifications", notificationRoutes);
 
 app.use("/pwa", pwaRoutes);
+app.use("/campaign", keitaroRoutes);
 
 //active
 //suspended
